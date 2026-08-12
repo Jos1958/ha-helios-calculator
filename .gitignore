@@ -1,0 +1,16 @@
+# Created by Google Gemini (to be checked/reviewed), templates for python and visual studio are much bigger
+# Python cache en tijdelijke bestanden
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+
+# Visual Studio 2026 mappen
+.vs/
+*.user
+*.suo
+
+# OS bestanden
+.DS_Store
+Thumbs.db
