@@ -1,13 +1,13 @@
 # Release Notes
 
 ## 0.1.1 (2026-05-19)
-- **Features: 
+- **Features: ** 
   * no changes
 
-- **Fixes: 
+- **Fixes: **
   * renamed the py file to lower case with underscore
 
-- **Documentation: 
+- **Documentation: **
   * Added a RELEASE_NOTES_md
 
 - **Files Changed:**
