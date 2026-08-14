@@ -8,65 +8,100 @@ from scipy.optimize import linprog
 # Created by: Jos Raaijmakers
 # Log: 
 #   2026-05-19: JR: V0.1  Started Implementation with help of Google Gemini
+#   2026-05-20: JR: V0.2  Balance Rule included
 
 @service
-def helios_calc_battery_schedule():
-    # 1. Prijzen ophalen (bijv. komende 24 uur in centen/kWh)
-    # Dit kun je dynamisch uit een HA sensor trekken
-    prices = [15, 12, 10, 8, 9, 14, 22, 30, 28, 25, 20, 18, 
-              16, 15, 14, 18, 25, 35, 40, 32, 22, 18, 16, 14]
+def helios_calc_home_energy():
+    T = 8 # 24 uur
     
-    T = len(prices) # 24 uur
+    # -------------------------------------------------------------------
+    # 1. INPUT DATA (Haal dit uit je HA sensoren / voorspellingen)
+    # -------------------------------------------------------------------
+    import_prices  = [0.25, 0.20, 0.18, 0.15, 0.16, 0.22, 0.35, 0.37] # 24 prijzen (€/kWh)
+    export_prices  = [0.08, 0.05, 0.03, 0.01, 0.02, 0.06, 0.15, 0.22] # 24 vergoedingen (€/kWh)
     
-    # 2. Beslissingsvariabelen (2 parameters per uur):
-    # x[0..23]  = Vermogen geladen (kW)
-    # x[24..47] = Vermogen ontladen (kW)
-    c = np.concatenate([prices, -np.array(prices)]) # Doelfunctie: minimaliseer kosten
+    solar_forecast = [0   , 0   , 0   , 0   , 0.5 , 1.2 , 2.5 , 3.8 ] # 24 uurs voorspelling (kW)
+    house_forecast = [0.4 , 0.3 , 0.3 , 0.4 , 0.6 , 1.2 , 0.8 , 2.4 ] # 24 uurs verbruik (kW)
+
+    # -------------------------------------------------------------------
+    # 2. DOELFUNCTIE (c) - 96 Variabelen
+    # Structure: [Charge (24x), Discharge (24x), Import (24x), Export (24x)]
+    # -------------------------------------------------------------------
+    c_charge = [0] * T             # Batterij laden kost op zichzelf niks (gaat via import)
+    c_discharge = [0] * T          # Ontladen kost niks
+    c_import = import_prices       # Import kost geld (positief)
+    c_export = [-p for p in export_prices] # Export levert geld op (negatief)
     
-    # Maximaal vermogen om te (ont)laden: bijv. max 3.0 kW per uur
-    max_kw = 3.0
-    bounds = [(0, max_kw) for _ in range(2 * T)]
+    c = np.concatenate([c_charge, c_discharge, c_import, c_export])
+
+    # -------------------------------------------------------------------
+    # 3. BALANSREGEL (A_eq en b_eq): Import - Export - Charge + Discharge = Huis - Zon
+    # -------------------------------------------------------------------
+    A_eq = []
+    b_eq = []
     
-    # 3. Batterij restricties (Capaciteit & Efficientie)
-    battery_capacity_kwh = 10.0
-    initial_soc_kwh = 2.0 # Huidige lading
-    efficiency = 0.90 # 90% rendement
-    
-    # Formule: SOC_t = Start + sum(Laden * eff) - sum(Ontladen / eff)
-    # Beperking: 0 <= SOC_t <= Max_capaciteit
+    for t in range(T):
+        row = [0] * (4 * T)
+        
+        row[t] = -1         # -Charge[t]
+        row[T + t] = 1      # +Discharge[t]
+        row[2*T + t] = 1    # +Import[t]
+        row[3*T + t] = -1   # -Export[t]
+        
+        A_eq.append(row)
+        
+        # Vaste waarde aan de rechterkant:
+        netto_vraag = house_forecast[t] - solar_forecast[t]
+        b_eq.append(netto_vraag)
+
+    # -------------------------------------------------------------------
+    # 4. BATTERIJSPECIFICATIES (A_ub en b_ub voor de accu grenzen)
+    # -------------------------------------------------------------------
     A_ub = []
     b_ub = []
+    battery_max = 10.0  # kWh
+    soc_start = 2.0     # kWh
     
     for t in range(1, T + 1):
-        # Lading t/m uur t
-        charge_row = [efficiency if i < t else 0 for i in range(T)]
-        # Ontlading t/m uur t
-        discharge_row = [-(1.0 / efficiency) if i < t else 0 for i in range(T)]
-        
-        row = charge_row + discharge_row
-        
-        # Maximale capaciteit niet overschrijden: SOC_t <= Capacity
+        row = [0] * (4 * T)
+        # Tellen alleen Charge en Discharge mee tot uur t
+        for i in range(t):
+            row[i] = 1        # +Charge
+            row[T + i] = -1   # -Discharge
+            
         A_ub.append(row)
-        b_ub.append(battery_capacity_kwh - initial_soc_kwh)
+        b_ub.append(battery_max - soc_start) # Max capaciteit
         
-        # Niet onder 0 kWh zakken: -SOC_t <= 0
+        # Ook de 'niet onder 0 kWh zakken' regel toevoegen:
         A_ub.append([-val for val in row])
-        b_ub.append(initial_soc_kwh)
+        b_ub.append(soc_start)
 
-    # 4. Los het probleem op met de HiGHS solver
-    res = linprog(c, A_ub=A_ub, b_ub=b_ub, bounds=bounds, method='highs')
+    # -------------------------------------------------------------------
+    # 5. GRENZEN PER KNOP (Bounds)
+    # -------------------------------------------------------------------
+    bounds_charge = [(0, 3.0) for _ in range(T)]     # Max 3 kW laden
+    bounds_discharge = [(0, 3.0) for _ in range(T)]  # Max 3 kW ontladen
+    bounds_import = [(0, 17.0) for _ in range(T)]    # Max aansluiting (bijv. 3x25A = 17kW)
+    bounds_export = [(0, 17.0) for _ in range(T)]    # Max terugleveren
+    
+    bounds = bounds_charge + bounds_discharge + bounds_import + bounds_export
+
+    # -------------------------------------------------------------------
+    # 6. OPLOSSEN
+    # -------------------------------------------------------------------
+    res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=bounds, method='highs')
 
     if res.success:
-        charge_plan = res.x[:T]
-        discharge_plan = res.x[T:]
+        import_plan = res.x[2*T : 3*T]
+        export_plan = res.x[3*T : 4*T]
         
         log.info(f"Optimalisatie geslaagd! Verwachte kosten: {res.fun:.2f}")
         
         # Sla het resultaat op in een Home Assistant Sensor
         state.set(
             "sensor.battery_optimal_charge_power",
-            value=round(charge_plan[0], 2),
-            attributes={"full_schedule": charge_plan.tolist()}
+            value=round(res.fun, 2),
+            attributes={"import_plan": import_plan.tolist()}
         )
     else:
         log.error(f"Optimalisatie mislukt: {res.message}")

@@ -1,11 +1,14 @@
 # Release Notes
 
+## 0.2.0 (2026-05-20)
+- Introduced the Energy Balance Rule 
+
 ## 0.1.1 (2026-05-19)
 - **Features:** 
-  * no changes
+  * No changes
 
 - **Fixes:**
-  * renamed the py file to lower case with underscore
+  * Renamed the py file to lower case with underscore
 
 - **Documentation:**
   * Added a RELEASE_NOTES_md
