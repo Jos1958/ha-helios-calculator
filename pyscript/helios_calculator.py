@@ -1,24 +1,127 @@
 import time
 from datetime import datetime, timedelta
-import numpy as np
-from scipy.optimize import linprog
+import numpy as np                            # Numeric Pyscript Library (includes numeric array) 
+from scipy.optimize import linprog            # Scientific Pyscript Library for LP
 
-# Module: HELIOS Calculator - Python Function to Calculate an Optimized Energy Plan                            
-# Home Energy Linear Integrated Optimization Service (HELIOS Calculator)
-# The Optimizer uses SciPy Linear/MILP Programming to calculated the Optimal Energy Plan 
+# Module: HELIOS Optimize Energy Service                            Version: 0.5
+# Home Energy Linear Integrated Optimization System (HELIOS):
+# A Home Assistant Energy Optimizer Module that uses SciPy Linear/MILP Programming
+# to calculated the optimized Energy Plan for Solar production, Battery Charging/Discharging
+# and House Energy Usage for dynamic prices during the period.
+# A House Forecast is specified with the undeferrable energy usage in the house.
+# In the future support for Deferrable Devices (like EV, HP and Boiler) will be added. 
 #
 # Created by: Jos Raaijmakers
 # Log: 
-#   2026-05-19: JR: V0.1  Started Implementation with help of Google Gemini
-#   2026-05-20: JR: V0.2  Balance Rule included
-#   2026-06-23: JR: V0.3  Input arrays as parameters for the service, automation calls the service
-#   2026-06-24: JR: V0.4  Battery Configuration and Return payload to automation, calculate strategy
+#   2026-05-19: JR: V0.1 Started Implementation with help of Google Gemini
+#   2026-05-20: JR: V0.2 Balance Rule included
+#   2026-06-23: JR: V0.3 Input arrays as parameters for the service, automation calls the service
+#   2026-06-24: JR: V0.4 Battery Configuration
+#   2026-06-28: JR: v0.5 Created HBC lab page with plan results (status, graph, table) using apexchart and markdown cards
+#
+# Description:
+# Calculates an optimized energy plan for a specified horizon (typically 1 to 2 days)
+# by finding the optimal power setpoints for each interval.
+# 
+# The planning horizon is defined by the number of steps and the step duration in minutes.
+# For example: 24 steps of 60 minutes optimizes a 1-day period.
+# 
+# Grid import/export prices and house load forecasts must be provided as input arrays,
+# containing values for every step in the period.
+# 
+# Total Energy Cost is the sum of energy costs per step (calculated from grid import and export power).
+# The optimizer aims to MINIMIZE the Total Energy Cost over the entire horizon.
+# Note: Negative costs may occur when exporting energy to the grid or during negative import prices.
+# 
+# Note: Without a battery or deferrable loads, optimization opportunities are limited
+# since a strict power balance between consumption, import, and export must be met in each step.
+# 
+# The optimization horizon always starts today (and optionally extends to following days).
+# By default, the active start step is calculated based on the current time.
+# Optionally, a specific start step can be defined (e.g., step 1 to start at 00:00).
+# All input arrays must start at 00:00 today so the optimizer can align prices and forecasts correctly.
+# 
+# The resulting Optimized Energy Plan determines the active strategy for the current step
+# (e.g., NOM, Buy, Sell, Charge, Discharge, Disabled) and provides real-time setpoints
+# to steer the battery and (TODO) deferrable loads.
+# 
+# Required inputs:
+#  - Configuration (steps, step size, start step, solver time/iteration limits, grid limits)
+#  - Grid import prices array
+#  - Grid export prices array
+#  - House consumption forecast array
+# 
+# Optional inputs:
+#  - Solar production forecast array
+#  - Battery parameters
+# 
+# Optional deferrable loads (TODO):
+#  - Electric Vehicle (EV) charging profile
+#  - Heat Pump (HP) operation parameters
+#  - Boiler operation parameters
+#
+# Function List (V=Implemented, -=Todo):
+# V Optimizer: Solve the optimized energy plan using a SciPy Lineair Programming with the HiGHs solver
+# V Optimizer: First implementation has a fixed price array (for charging and discharge) and optimizes the cost
+# V Rules: In each step the SoC of the battery much be above 0 and below the maximum capacity 
+# V Payload: Return the optimized energy plan in a Home Assistant Entity/Attributes
+# V Payload: Return infeasible status with message and success indicator, runtime, iteration steps
+# V Payload: Built payload with optimization status and plan to return to HA Entity
+# V Optimizer: Include House Usage, Grid Import and Export and Solar Production variables in the rules
+# V Optimizer: Balance rule is introduced since House Usage, Solar Production, Grid Import/Export and Battery Charging/Discharging must be in balance 
+# V Cost: Costs are calculated for the the Grid Import and Export instead of for the Charging/Discharging
+# V Grid Configuration: Values for Max and Min Grid Power 
+# V Input: Prices and House and Solar Forecasts are now parameters for the service (iso fixed arrays) 
+# V Payload: Current values are returned in the payload for the active step in Watt (iso kW in the plan)
+# V Payload: Calculate the Battery SoC % and Energy (kWh) and return in the result 
+# V Input: Solver configuration for max iterations and runtime
+# V Payload: Return the result as a response to the service (can now be viewed/used in the HA Automation)
+# 
+# V Battery Configuration: Effectivity, SoC (Min, Max, Start and End), Max Charge/Discharge Power
+# V Error Handling: Protect against infeasible solution with Min and Max and invalid SoC Start
+# V Error Handling: Protect against infeasible solution with SoC End that is not reachable for remaining steps and max charge power
+# V Payload: Created a Battery Strategy from the Optimized Plan (still needs to be improved)
+# V Payload: Handle parallel charging and discharging in the current values (but not in the plan) 
+# - Optimizer: Introduced charging and discharge costs to prevent the above, still needs to be configurable
+# - Limit recorder for the output entity (see google gemini thread)
+#
+# - HBC Interface (to be discussed with Bob):
+#   - What is the status of the next version of HBC?
+#   - Environment: PyScript, Node-Red, HACS (?)
+#   - HBC User Interface / Tab for Optimizer
+#   - Helios as additional Strategy for HBC
+#   - Input: Prices (Import and Export), Solar Forecast, House Forecast, Other Configuration
+#   - Output: Status, Plan, Current (Strategy, Battery Power) 
+#   - How to handle Energy Providers / Cheapest Hours, no export prices yet
+#   - How to handle Solar Forecast Integrations, currently in HBC only today and tomorrow forecast
+#   - How to divide the responsibilities between HBC and Helios
+#
+# - Development: Create a version that can run in Visual Studio for debugging
+# - Adding additional comment in the code and replace all dutch comments by english (ongoing task)
+# - Testing: Validation of the cost function and check that a good optimal solution has been calculated
+# - Testing: Calculate the cost of other solution to be proof that an ideal solution has been found
+# - Testing: Run with several datasets and determine expected result
 
+# - Input: Day handling instead of number of steps, fixed horizons (in days) 
+# - Conversion (multiply, combine or split) of arrays to adapt to the requested steps and step size
+# - Error handling: Return a result with an error message when an exception occurs
+# - Input: Validation of input values and length of the input arrays against number of steps
+# - Optimizer: Binary (Disable) or modulating (Dim) Solar Production
+# - Input: Implement separate efficiency for charging and discharging
+# - Input: Handle specific solar forecast integrations (e.g. forecast.solar API), array with hour forecast required
+# - Input: Keep history of house usage per hour or 15min (for house forecast)
+# - Optimizer: Implement Electical Vehicle (EV) Charging, ready before date/time (next day or later)
+# - Optimizer: Implement Heat Pump (HP) Device with required minimum kWh and already applied Energy per day
+# - Optimizer: Implement Boiler Device with required minimum kWh and already applied Energy per day
+# - Optimizer: Implement other deferrable devices
+# - Payload: Device Strategy for other Devices (like Battery Strategy) 
+# - Optimer: Disable Battery Discharging during EV Charging
 
-@service(supports_response="optional")
+# HeliosOptimize Energy Service with a return response
+@service(supports_response="optional") 
 def helios_calc_home_energy(
-    steps=24,
-    step_size=60,
+    steps=24,      # 24 steps for 60 minutes is one day,  48 steps is two days
+    step_size=60,  # 96 steps for 15 minutes is one day, 192 steps is two days
     start_step=0,  # 0 = Determine start step automatically using current time
     max_time=10.0,
     max_iterations=10000,
@@ -32,45 +135,13 @@ def helios_calc_home_energy(
     ev=None,
     heat_pump=None,
     boiler=None,
-    return_response=None
+    return_response=None # Return a result
 ):
     """
-Home Energy Linear Integrated Optimization System (HELIOS):
-
-A Home Assistant Energy Optimizer Service that uses SciPy Linear/MILP Programming.
-It calculates an Optimized Energy Plan for a certain period (e.g. 1 or 2 days) by
-searching for the best power values per step in the period.
-Specified the number of steps and the length of a step in minutes.
-For example: 24 steps of 60 minutes optimizes a period of 1 day.
-Import and Export prices and House Usage Forecast arrays are input for the Optimizer.
-For each step the prices and energy usage need to be provided in these arrays.
-
-The Energy Cost is calculated for the energy import from or exported to the Grid.
-Total Energy Cost is the sum of the energy costs per step.
-The optimizer tries to MINIMIZE the Total Energy Cost over the whole period.
-Remark: A negative cost can be returned when energy is exported to the grid or when negative import prices occur.
-Without a battery or without deferrable devices there is not much to optimize since 
-a power balance between power usage and imported and exported energy must
-exist in each step!
-
-The optimization period is always for today (and optionally following days) and by default the start step will based on the current time.
-Optionally a different start step can be specified (e.g. 1 to start at the beginning of the day.  
-Input arrays must start at 00:00 for today so that the optimizer can find the correct prices and forecasts.
-
-The calculated Optimized Energy Plan is used as input to determine the Battery Strategy:
-  NOM, Buy, Sell, Charge, Discharge, Disabled, (Zero?)
-Current values are provided for steering the battery and deferrable devices.
-
-Optional inputs are:
-- Battery Information
-- Solar Forecast Information
-
-Optional deferrable devices are:
-- Eletrical Vehicle (EV) Charging Information
-- Heat Pomp (HP) Operation Information
-- Boiler Operation Information
+    Home Energy Linear Integrated Optimization System (HELIOS):
+    A Home Assistant Energy Optimizer Service that uses SciPy Linear/MILP Programming.
     """
-    
+
     T = int(steps)
     dt = float(step_size) / 60.0
     start_index = int(start_step) - 1 # Start Index (0..T-1), while Start Step (1..T)
@@ -79,7 +150,7 @@ Optional deferrable devices are:
     # 0. TIME LOGIC & AUTOMATIC START_INDEX Calculation (based on current time)
     # -------------------------------------------------------------------
     now = datetime.now()
-    base_dt = now.replace(hour=0, minute=0, second=0, microsecond=0) # Start at 00:00 today
+    base_dt = now.replace(hour=0, minute=0, second=0, microsecond=0) # Start optimization at 00:00 today
 
     # When start_index is -1 (start_step is 0), the start index is calculated using current time
     if start_index < 0:
@@ -100,17 +171,17 @@ Optional deferrable devices are:
     solar_enabled  = bool(solar     and solar.get("enabled", True))
     solar_forecast = [float(s) for s in solar.get("forecast", [0.0] * T)] if solar_enabled else [0.0] * T
 
-    bat_enabled    = bool(battery   and battery.get("enabled", True))
-    ev_enabled     = bool(ev        and ev.get("enabled", False))
+    bat_enabled    = bool(battery   and battery.get  ("enabled", True ))
+    ev_enabled     = bool(ev        and ev.get       ("enabled", False))
     hp_enabled     = bool(heat_pump and heat_pump.get("enabled", False))
-    boiler_enabled = bool(boiler    and boiler.get("enabled", False))
+    boiler_enabled = bool(boiler    and boiler.get   ("enabled", False))
 
     # -------------------------------------------------------------------
-    # 2. DYNAMISCHE INDEX-MAP OPBOUWEN
+    # 2. BUILT DYNAMIC INDEX-MAP for optimization variables array
     # -------------------------------------------------------------------
-    active_vars = ["import", "export"]
-    if bat_enabled:
-        active_vars.extend(["bat_charge", "bat_discharge"])
+    active_vars = ["import", "export"] # every optimization has an import an an export variable type
+    if bat_enabled: # battery applicable?
+        active_vars.extend(["bat_charge", "bat_discharge"]) # add a charge and a discharge variable type
     if ev_enabled:
         active_vars.append("ev_charge")
     if hp_enabled:
@@ -119,9 +190,13 @@ Optional deferrable devices are:
         active_vars.append("boiler_power")
 
     var_offset = {name: i for i, name in enumerate(active_vars)}
-    M = len(active_vars)
-    total_vars = T * M
+    M = len(active_vars) # Number of variable types
+    total_vars = T * M # total number of variables (steps * variable types)
 
+    # Function to determine the index in the variable array
+    # Input is the step index and the variable type
+    # Each variable type exist in the array once for each step
+    # Return the array index
     def get_idx(t, var_name):
         return t * M + var_offset[var_name]
 
@@ -145,10 +220,10 @@ Optional deferrable devices are:
         # Grid Import & Export
         idx_imp = get_idx(t, "import")
         idx_exp = get_idx(t, "export")
-        c[idx_imp] =  import_prices[t] * dt
-        c[idx_exp] = -export_prices[t] * dt
         bounds[idx_imp] = (0, 0) if is_past else (0, float(grid_max_import))
         bounds[idx_exp] = (0, 0) if is_past else (0, float(grid_max_export))
+        c[idx_imp] =  import_prices[t] * dt # Cost factor per imported kWh
+        c[idx_exp] = -export_prices[t] * dt # Cost factor per exported kWh
 
         # Battery: 
         if bat_enabled:
@@ -159,18 +234,14 @@ Optional deferrable devices are:
             bounds[idx_chg] = (0, c_p)
             bounds[idx_dis] = (0, d_p)
 
-            # Give charging and discharging a verwaarloosbare cost (e.g. 0.0001 per kWh)
+            # Give charging and discharging a small cost 
+            # TODO: Make the charging and discharging cost configurable
+            # 0.0001 per kWh did not work so now using 0.01 for discharge only
             # This will prevent the solver to charge and discharge at the same time!
             if not is_past:
-                c[idx_chg] = 0.000 * dt
-                c[idx_dis] = 0.010 * dt
+                c[idx_chg] = 0.000 * dt # Cost factor for charged kWh
+                c[idx_dis] = 0.010 * dt # Cost factor for discharged kWh
         
- #       if bat_enabled:
- #           c_p = 0.0 if is_past else float(battery.get("charge_power_kw"   , 3.0))
- #           d_p = 0.0 if is_past else float(battery.get("discharge_power_kw", 3.0))
- #           bounds[get_idx(t, "bat_charge"   )] = (0, c_p)
- #           bounds[get_idx(t, "bat_discharge")] = (0, d_p)
-
         # Optional Smart Deferrable Devices:
         if ev_enabled: # Electrical Vehicle enabled?
             ev_p = 0.0   if is_past else float(ev.get("charge_power"    , 7.4))
@@ -217,14 +288,20 @@ Optional deferrable devices are:
             b_eq.append(net_house_demand)
 
     # -------------------------------------------------------------------
-    # 5. BATTERIJ SOC BEPERKINGEN & RANDGEVALLEN (A_ub, b_ub)
+    # 5. BATTERIJ SOC LIMITATIONS & BORDERLINE CASES (A_ub, b_ub)
     # -------------------------------------------------------------------
+    # Start the optimization with the specified start SoC
+    # Optionally end the optimization above the specified end SoC
+    # Keep the battery above the minimum SoC and below the maximum SoC
+    # Handle the special case when the start SoC is outside the min, max SoC
+    # Handle the border line case when the end SoC is not reachable in the optimization period
+
     A_ub = []
     b_ub = []
 
     if bat_enabled:
         cap = float(battery.get("capacity_kwh", 10.0))
-        eff = float(battery.get("efficiency", 0.95))
+        eff = float(battery.get("efficiency"  , 0.95))
 
         soc_start_pct = float(battery.get("soc_start_pct", 20.0))
         soc_start_kwh = (soc_start_pct / 100.0) * cap
@@ -236,7 +313,7 @@ Optional deferrable devices are:
         soc_max_kwh = (soc_max_pct / 100.0) * cap
 
         # A. Retrieve Maximum Power (Charge and Discharge):
-        max_charge_power = float(battery.get("charge_power_kw", 3.0))
+        max_charge_power    = float(battery.get("charge_power_kw"   , 3.0))
         max_discharge_power = float(battery.get("discharge_power_kw", 3.0))
 
         # B. Borderline Case: Is the requested end-SOC possible in the available charge time?
@@ -252,8 +329,8 @@ Optional deferrable devices are:
         # C. Cumulative SOC rules per step
         # Keep the battery SOC above the Minimum and below the Maximum at every step of the optimization period
         # For each step two rules are added:
-        # - Keep the sum of the Charged kWh - Discharged kWh below SOC-Max - SOC-Start
-        # - Keep the sum of the Discharged kWh - Charged kWh above SOC-Start - SOC-Min
+        # - Keep the sum of the Charged kWh    - Discharged kWh below SOC-Max - SOC-Start
+        # - Keep the sum of the Discharged kWh - Charged kWh    above SOC-Start - SOC-Min
         # The Sum per step includes in every next step an extra step charge or discharge
         # No rules are added for the steps that are before the start step
         # To prevent infeasible SOC-Min or SOC-Max rules: 
@@ -261,9 +338,9 @@ Optional deferrable devices are:
         #   when the max charge or max discharge power is insufficient to reach the minimum or maximum SOC during the step.
         for t in range(1, T + 1):
             if t <= start_index:
-                continue # Current step is before the
+                continue # Current step is before the start index
 
-            steps_from_start = t - start_index
+            steps_from_start = t - start_index # steps handle since start index
 
             # When starting above SOC-Max we cannot discharge faster than the max discharge power:
             max_discharge_kwh = steps_from_start * (max_discharge_power / eff) * dt
@@ -273,16 +350,16 @@ Optional deferrable devices are:
             max_charge_kwh = steps_from_start * (max_charge_power * eff) * dt
             step_allowed_min_kwh = min(soc_min_kwh, soc_start_kwh + max_charge_kwh)
 
-            # Initiate the multipliers of the maximum rule with 0 (future steps are excluded from the sum)
+            # Initiate the multipliers of the maximum and minimum rule with 0's (future steps are excluded from the sum)
             row_max = np.zeros(total_vars)
             row_min = np.zeros(total_vars)
 
             # Fill the multipliers for all steps until and including the current step
             # Remark: The sum includes the skipped steps (before the start step) but the charge and discharge values for these steps will be zero anyway
             for i in range(t):
-                row_max[get_idx(i, "bat_charge")] = eff * dt
+                row_max[get_idx(i, "bat_charge"   )] = eff * dt
                 row_max[get_idx(i, "bat_discharge")] = -(1.0 / eff) * dt
-                row_min[get_idx(i, "bat_charge")] = -eff * dt
+                row_min[get_idx(i, "bat_charge"   )] = -eff * dt
                 row_min[get_idx(i, "bat_discharge")] = (1.0 / eff) * dt
 
             # Add the SOC-Max rule for the current step:
@@ -307,68 +384,80 @@ Optional deferrable devices are:
         b_ub.append(-(soc_end_min_kwh - soc_start_kwh)) # (Feasible) Minimum SOC End - Start SOC
     
     # -------------------------------------------------------------------
-    # 6. SCIPY SOLVER AANROEPEN
+    # 6. Call SCIPY with HiGHs SOLVER
     # -------------------------------------------------------------------
-    solver_options = {
+    solver_options = { # Solver time and iteration limits
         "time_limit": float(max_time),
         "maxiter": int(max_iterations)
     }
 
-    t_start = time.perf_counter()
+    t_start = time.perf_counter() # Start of LP run
 
+    # Calculate with LP the optimal values of the optimization variables
+    # Calculate the cost as the sum of the cost per step
+    # Each optimization variable has its own cost factor (valid in all steps)
+    # Stick to the ('<=' and '=') rules as defined for the variables
+    # Keep the variables within the specified boundaries for each step
+    # The Optimal solution has the lowest cost value (all steps together)
     res = linprog(
-        c,
-        A_ub=A_ub if A_ub else None,
-        b_ub=b_ub if b_ub else None,
-        A_eq=A_eq,
-        b_eq=b_eq,
-        bounds=bounds,
-        method="highs",
-        options=solver_options
+        c,                           # Cost factors per optimization variable
+        A_ub=A_ub if A_ub else None, # Left  side of smaller or equal (<=) rules
+        b_ub=b_ub if b_ub else None, # Right side of smaller or equal (<=) rules
+        A_eq=A_eq,                   # Left  side of = rules
+        b_eq=b_eq,                   # Right side of equal (=) rules
+        bounds=bounds,               # Boundaries for the optimization variables
+        method="highs",              # LP method
+        options=solver_options       # Solver time and iteration limits
     )
 
-    t_end = time.perf_counter()
-    execution_time_ms = round((t_end - t_start) * 1000, 2)
+    t_end = time.perf_counter() # End of LP run
+    execution_time_ms = round((t_end - t_start) * 1000, 2) # calculate execution time
 
     # -------------------------------------------------------------------
-    # 7. RESULTATEN VERWERKEN EN STRATEGIEN BEPALEN
+    # 7. PROCESS RESULTS and DETERMINE STRATEGIES
     # -------------------------------------------------------------------
     if res.success:
+        # Initialize the output arrays:
         timestamps = []
-        grid_import_plan, grid_export_plan = [], []
         solar_plan, house_plan = [], []
+        grid_import_plan, grid_export_plan = [], []
         bat_charge_plan, bat_discharge_plan = [], []
+        ev_plan, hp_plan, boiler_plan = [], [], []
         soc_pct_plan, soc_kwh_plan = [], []
         strategy_plan = []
-        ev_plan, hp_plan, boiler_plan = [], [], []
 
         current_soc_kwh = soc_start_kwh if bat_enabled else 0.0
 
         step_dt = base_dt # Start at 00:00 today
-        for t in range(T):
+        for t in range(T): # for each step get variables from the optimization:
             timestamps.append(step_dt.isoformat(timespec="minutes")) # Timestamp for start of next step
 
-            imp = round(float(res.x[get_idx(t, "import")]), 2)
-            exp = round(float(res.x[get_idx(t, "export")]), 2)
-            sol = round(solar_forecast[t], 2)
+            # Use Solar and House Power from the Forecasts:
+            sol   = round(solar_forecast[t], 2)
             house = round(house_forecast[t], 2)
 
-            c_p = round(float(res.x[get_idx(t, "bat_charge")]), 2) if bat_enabled else 0.0
-            d_p = round(float(res.x[get_idx(t, "bat_discharge")]), 2) if bat_enabled else 0.0
+            # Use Import, Export from the optimized variables
+            imp    = round(float(res.x[get_idx(t, "import"       )]), 2)
+            exp    = round(float(res.x[get_idx(t, "export"       )]), 2)
 
-            ev_p = round(float(res.x[get_idx(t, "ev_charge")]), 2) if ev_enabled else 0.0
-            hp_p = round(float(res.x[get_idx(t, "hp_power")]), 2) if hp_enabled else 0.0
-            boil_p = round(float(res.x[get_idx(t, "boiler_power")]), 2) if boiler_enabled else 0.0
+            # Use Battery Charge and Discharge Power from the optimized variables (but only when the battery is enabled)
+            c_p    = round(float(res.x[get_idx(t, "bat_charge"   )]), 2) if bat_enabled    else 0.0
+            d_p    = round(float(res.x[get_idx(t, "bat_discharge")]), 2) if bat_enabled    else 0.0
 
-            # SOC verloop berekenen
-            if bat_enabled:
+            # Use Deferrable Devices Power from the optimized variables (but only when the deferrable devices is enabled)
+            ev_p   = round(float(res.x[get_idx(t, "ev_charge"    )]), 2) if ev_enabled     else 0.0
+            hp_p   = round(float(res.x[get_idx(t, "hp_power"     )]), 2) if hp_enabled     else 0.0
+            boil_p = round(float(res.x[get_idx(t, "boiler_power" )]), 2) if boiler_enabled else 0.0
+
+            # Calculate Battery SoC % and KWh per step:
+            if bat_enabled: # Is battery enabled?
                 delta_kwh = (c_p * eff - d_p / eff) * dt
                 current_soc_kwh = max(0.0, min(cap, current_soc_kwh + delta_kwh))
                 current_soc_pct = round((current_soc_kwh / cap) * 100.0, 1)
-            else:
+            else: # battery not enabled
                 current_soc_pct = 0.0
 
-            # Strategie Bepalen (met 'Skipped' voor overgeslagen stappen)
+            # Determine (Battery) Strategy (with 'Skipped' for skipped steps)
             if t < start_index:
                 strat = "Skipped"
             else:
@@ -392,7 +481,7 @@ Optional deferrable devices are:
                 else:
                     strat = "Disabled"
 
-            # Arrays vullen
+            # Append variable value for the step to the arrays:
             grid_import_plan.append(imp)
             grid_export_plan.append(exp)
             solar_plan.append(sol)
@@ -409,6 +498,7 @@ Optional deferrable devices are:
             step_dt = step_dt + timedelta(minutes=step_size) # Timestamp for next step
         
         end_dt = step_dt # End of last step
+        soc_end_kwh = current_soc_kwh
         
         # -------------------------------------------------------------------
         # 8. UPDATE HOME ASSISTANT SENSOR
@@ -423,9 +513,12 @@ Optional deferrable devices are:
 
 
         full_payload = {
+            # Optimization/Solver Result and Timing: 
             "success": True,
+            "friendly_name": "Helios Energy Plan",
             "total_cost_eur": round(float(res.fun), 2),
             "last_run_started": now.isoformat(),
+            "last_run_stopped": datetime.now().isoformat(),
             
             "solver_execution_time_ms": execution_time_ms,
             "solver_iterations": res.nit,
@@ -437,21 +530,17 @@ Optional deferrable devices are:
             "start_step" : start_index  + 1,
             "active_step": active_index + 1,
             "soc_start"  : soc_start_kwh,
+            "soc_end"    : soc_end_kwh,
             
             # Current Strategy and Power values for the active step (current period)
             # Remark: Plan is in kW but Current is in Watt
             "current": {
-                "strategy": current_strat, 
+                "strategy": current_strat, # Battery Strategy 
 
                 "net_battery_power_w": net_w,      # Net Battery Power in W: Charge is Positive (+), Discharge is Negative (-)
                 "battery_power_w"    : abs(net_w), # Battery Power in Watt is always positive (for Charging and Discharging), absolute value of net
                 "charge_power_w"     : (net_w      if net_w > 0 else 0),  # Charge    is only applicable when net battery power is positive
                 "discharge_power_w"  : (abs(net_w) if net_w < 0 else 0),  # Discharge is only applicable when net battery power is negative
-
-                # Previous battery power values (no longer used):
-#               "battery_power_w"  : 1000 * max(bat_charge_plan[active_index], bat_discharge_plan[active_index]), 
-#               "charge_power_w"   : 1000 * bat_charge_plan[active_index],
-#               "discharge_power_w": 1000 * bat_discharge_plan[active_index],
 
                 "grid_w"           : 1000 * (grid_import_plan[active_index] - grid_export_plan[active_index]), # Net Grid Power in Watt
                 "ev_power_w"       : 1000 * ev_plan[active_index],
@@ -459,9 +548,9 @@ Optional deferrable devices are:
                 "boiler_power_w"   : 1000 * boiler_plan[active_index]
             },
 
-            # Volledige dagplanning voor kaarten/grafieken
-            # Per stap: timestamps, strategie, batterij soc percentage en soc kWh
-            #  overige plannen in kW per stap
+            # Complete Dayplanning for Tables/Graphs and for Testing
+            # Per Step: Timestamps, Strategie, Batterij SoC percentage and SoC kWh
+            #  other plan values in kW per step
             "plan": {
                 "timestamp": timestamps,
                 "strategy": strategy_plan,
@@ -480,21 +569,33 @@ Optional deferrable devices are:
         }
 
         state.set(
-            "sensor.energy_optimization_plan",
+            "pyscript.helios_energy_plan",
             value=current_strat,
             new_attributes=full_payload
         )
 
-        log.info(f"Energie optimalisatie succesvol uitgevoerd in {execution_time_ms} ms (start_step={start_index + 1}).")
+        log.info(f"Energy Optimalizer succesfully executed in {execution_time_ms} ms (start_step={start_index + 1}).")
         
-        # Volledige data teruggeven aan de Trace
+        # Return Full Payload to the Service Trace
         return full_payload
 
     else:
-        log.error(f"Energy Optimizer mislukt: {res.message}")
+        log.error(f"Energy Optimizer failed: {res.message}")
         error_payload = {
             "success": False,
             "error": res.message
         }
-        return error_payload
 
+@service
+def helios_start_optimizer():
+    # 1. Turn on the helios optimizer running status (switches the button to orange)
+    state.set("pyscript.helios_optimizer_running", "on", friendly_name="Helios Status")
+    
+    # 2. Start the automation (which also provides the input parameters for the above service)
+    automation.trigger(entity_id="automation.helios_optimize_energy")
+    
+    # 3. Wait an extra 1 second otherwise the color change will not be visible
+    task.sleep(1)
+    
+    # 4. Turn off the helios optimizer running status (switches the button back to green)
+    state.set("pyscript.helios_optimizer_running", "off", friendly_name="Helios Status")
