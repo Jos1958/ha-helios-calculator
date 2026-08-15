@@ -4,8 +4,7 @@
 ## Intro
 The HELIOS Calculator Service is a Python function to calculate an Optimized Energy Plan                            
 The Calculator uses SciPy Linear/MILP Programming to optimize the Energy Plan 
-for Solar Production, Battery Charging/Discharging and expected House Energy Usage 
-for Dynamic Prices.
+for Dynamic Prices, Solar Production, Battery Charging/Discharging and House Energy Usage.
 
 * WARNING: The Current Version is a Proof of Concept for the Helios Calculator
 * The actual calculation model will be delivered in version 1.0.0
