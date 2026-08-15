@@ -1,6 +1,8 @@
 # ha-helios-calculator
 A Home Energy Plan Optimizer for Home Assistant using a HiGHS solver
 
+![Helios Calculator](images/HeliosCalculatorBanner.jpeg)
+
 This project creates an energy plan based upon the solar forecast and the house forecast.
 
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Integration-3DDC84?logo=home-assistant&logoColor=#03A9F4)](https://www.home-assistant.io/) 

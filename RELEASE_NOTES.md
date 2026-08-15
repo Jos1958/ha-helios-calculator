@@ -1,5 +1,10 @@
 # Release Notes
 
+## 0.4.0 (2026-06-24)
+- Input parameters now include a dictionary for the Battery Configuration
+- Return payload to the Home Assistant automation
+- Calculate a battery strategy from the optimization results (concept version)
+
 ## 0.3.0 (2026-06-23)
 - Added Input arrays as parameters to the calculation/optimization service
 - Home Assistant Automation calls the service with these parameters
