@@ -1,6 +1,5 @@
 optimize_schedule:
   name: Calculate Optimized Schema
-  icon: mdi:calculator
   description: Performs a SciPy HiGHS optimalization for energy usage.
   fields:
     energy_demand_kwh:
