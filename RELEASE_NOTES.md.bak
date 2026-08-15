@@ -1,6 +1,6 @@
 # Release Notes
 
-## 0.3.0 (2026-06-23)
+## 0.3.0 (2026-05-20)
 - Added Input arrays as parameters to the calculation/optimization service
 - Home Assistant Automation calls the service with these parameters
 
