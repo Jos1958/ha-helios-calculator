@@ -1,5 +1,9 @@
 # Release Notes
 
+## 0.6.0 (2026-08-01)
+- Added Solar optimization (enabled, modulating, binary, disabled)
+- Split the code into a Helios Calculator (HA Service) and Helios Module (Actual Solver) for testing in Visual Studio
+
 ## 0.5.0 (2026-06-28)
 - Extended the payload and the related output entity for presentation on a Home Assistant Dashboard
 - Created HBC lab page with plan results (status, graph, table) using apexchart and markdown cards
@@ -10,7 +14,7 @@
 - Calculate a battery strategy from the optimization results (concept version)
 
 ## 0.3.0 (2026-06-23)
-- Added Input arrays as parameters to the calculation/optimization service
+- Added Input arrays (prices, house and solar forecast) as parameters to the calculation/optimization service
 - Home Assistant Automation calls the service with these parameters
 
 ## 0.2.0 (2026-05-20)
