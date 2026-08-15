@@ -1,0 +1,35 @@
+optimize_schedule:
+  name: Calculate Optimized Schema
+  icon: mdi:calculator
+  description: Performs a SciPy HiGHS optimalization for energy usage.
+  fields:
+    energy_demand_kwh:
+      name: Energy Demand (kWh)
+      description: Total Energy Demand in kWh for the period.
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 0.1
+          unit_of_measurement: kWh
+    grid_price_low:
+      name: Low Tarif (€/kWh)
+      description: Electricity price during off-peak hours.
+      default: 0.15
+      selector:
+        number:
+          min: 0
+          max: 2
+          step: 0.01
+          unit_of_measurement: €/kWh
+    grid_price_high:
+      name: Hoog tarief (€/kWh)
+      description: Electricity price during peak hours.
+      default: 0.35
+      selector:
+        number:
+          min: 0
+          max: 2
+          step: 0.01
+          unit_of_measurement: €/kWh

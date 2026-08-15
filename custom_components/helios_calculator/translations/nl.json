@@ -1,0 +1,14 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Installatie van de Helios Calculator",
+        "description": "Welkom bij de **Helios Calculator**!\n\nDeze integratie gebruikt SciPy linear programmeren om het optimale energie gebruik te berekenen.\nDe configuratie kan worden aangepast in de aanroep van de Helios Service.\nKlik op **Verzenden** om de integratie te activeren."
+      }
+    },
+    "abort": {
+      "already_configured": "Helios Calculator is al geconfigureerd.",
+      "already_in_progress": "Configuratie van de Helios Calculator is al bezig. Herstart HA als dit zo blijft."
+    }
+  }
+}

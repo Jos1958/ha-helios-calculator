@@ -1,0 +1,15 @@
+alias: Helios Calculator - Optimize Schedule
+description: Proof of Concept for the LP solver in a custom component
+triggers: []
+conditions: []
+actions:
+  - action: helios_calculator.optimize_schedule
+    data:
+      energy_demand_kwh: 35.5
+      grid_price_low: 0.15
+    response_variable: optimalization_result
+  - action: persistent_notification.create
+    data:
+      title: Helios Optimalization Completed
+      message: "Minimum Costs: €{{ optimalization_result.total_cost_eur }}"
+mode: single
