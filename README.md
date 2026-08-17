@@ -1,24 +1,32 @@
-# ha-helios-calculator
+# Home Assistant Helios Calculator (ha-helios-calculator)
 ![Helios Calculator](images/HeliosCalculatorBanner.jpeg)
 
 ## Intro
-The HELIOS Calculator Service is a Python function to calculate an Optimized Energy Plan                            
-The Calculator uses SciPy Linear/MILP Programming to optimize the Energy Plan 
-for Dynamic Prices, Solar Production, Battery Charging/Discharging and House Energy Usage.
+The **HELIOS Calculator** Service is a native Home Assistant custom component designed to calculate mathematically an optimal energy plan.
+The Calculator uses **SciPy Linear/MILP Programming** to optimize the Energy Plan 
+for **Dynamic** Prices, **Solar** Production, **Battery** Charging/Discharging and **House** Energy Usage.
 
-* WARNING: The Current Version is a Proof of Concept for the Helios Calculator
-* The actual calculation model will be delivered in version 1.0.0
+**WARNING:** The Current Version is a Proof of Concept for the Helios Calculator
+The fully functional calculation model will be delivered in version 1.0.0
 
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Integration-3DDC84?logo=home-assistant&logoColor=#03A9F4)](https://www.home-assistant.io/) 
 
+- **HACS Ready:** Built from the ground up as a native custom component, removing the need for users to configure `pyscript` prerequisites.
+- **Performance:** LP solvers require efficient memory and matrix handling, which runs natively and safely within the HA core async loops.
+- **Clean API:** Exposes calculated schedules directly as Home Assistant entities/sensors, making it effortless to feed the optimal states into Node-RED or automation scripts.
+
 ## Features
-- Simple configuration (default values for all parameters)
-- Uses Linear Programming to determine the optimal energy plan (highest profit and lowest cost)
-- Superfast and asynchronous calculation
-- Fully integrated with Home Assistant (no separate engine, uses Python and SciPy modules for the LP/MILP)
-- Open design: no links with specific (battery or solar) hardware or forecast
-- Calculates for 1, 2 or 3 day period
-- Support for hour and 15 minutes steps
+- **Simple** configuration (default values for all parameters, runs without changes a test optimization)
+- Uses **Linear Programming** to determine the optimal energy plan (highest profit and lowest cost)
+- **HACS Ready** native custom component that is built with Python (No need to install PyScript) 
+- Fully integrated with **Home Assistant** (no separate engine, uses **SciPy** modules for the LP/MILP)
+- **Superfast** and **asynchronous** calculation in HA core loop
+- **Open design:** no links with specific (battery or solar) hardware or forecast
+- Designed to be able to work together with the **Home Battery Control (HBC)** project
+- Calculates for a 1-4 day period
+- Start the optimization automatically at the current time (or specify a specific step) for **recalculation** of the plan
+- **Clean** and **Simple** input arrays for full day(s) (00:00-24:00)
+- Support for 60 and 15 minutes steps
 - Future: EV, Heatpump and Boiler devices
 - Future: Provide separate module(s) to link to forecast models, battery devices and solar inverters
 
@@ -52,7 +60,7 @@ to steer the battery and (TODO) deferrable loads.
 - Configuration (steps, step size, start step, solver time/iteration limits, grid limits)
 - Grid import prices array (import price per step)
 - Grid export prices array (export price per step)
-- House consumption forecast array
+- House consumption forecast (without deferrable loads) array 
  
 ## Optional inputs
 - Solar production forecast array
@@ -64,24 +72,29 @@ to steer the battery and (TODO) deferrable loads.
 - Boiler operation parameters
 
 ## Installation
+- **Prerequisites:**
+  - HACS installation on your Home Assistant System
+  - For the Helios Dashboard
+    - Markdown card  
 - **HACS:** 
-  * You need to installation HACS on your Home Assistant System
-  * Select the HACS Dashboard
-  * Search for "Helios Calculator"
-  * Click the "Helios Calculator" to open the readme page with the <download> button
-  * Press the "Download" button to download the calculator to /config/custom_components/helios_calculator
+  * On the HACS Dashboard: Search for "Helios Calculator"
+  * Click the "Helios Calculator" to open the Helios README page with the <Download> button
+  * Press the "Download" button to download the Helios Calculator (in /config/custom_components/helios_calculator)
+
 - **Integration:**
-  * Settings -> Devices and Services - [Integrations]
-  * Press the <+ Add Integration>-button
+  * Open the Integration Page (**Settings** -> **Devices and Services** - **[Integrations]**)
+  * Press the **+ Add Integration** button
   * Search for "Helios Calculator"
   * Click the "Helios Calculator"
-  * A Popup appears for the Helios Calculator
-  * Press the <Send>-button to add the integration 
-  * A popup appears: "Configuration created for Helios Calculator"
-  * Press <Complete>-button
-  * Note: All further configuration is done in the call to Helios Calculator Service  
+  * A Popup appears for the Helios Calculator with a "Send" button
+  * Press **Send** to add the integration 
+  * A popup appears: "Configuration created for Helios Calculator" with a "Complete" button
+  * Press **Complete** to close the popup
+  * **Note:** All further configuration is done in the call to Helios Calculator Service  
+
 - **Automation:**
   * todo
+
 - **Dashboard:**
   * todo   
 

@@ -24,13 +24,11 @@ _LOGGER = logging.getLogger(__name__)
 # Validation schema for the service input
 OPTIMIZE_SCHEMA = vol.Schema({
     vol.Required("energy_demand_kwh"): vol.Coerce(float),
-    vol.Optional("grid_price_low", default=0.15): vol.Coerce(float),
+    vol.Optional("grid_price_low" , default=0.15): vol.Coerce(float),
     vol.Optional("grid_price_high", default=0.35): vol.Coerce(float),
 })
 
-def _solve_helios_optimization(
-    demand: float, price_low: float, price_high: float
-) -> dict[str, Any]:
+def _solve_helios_optimization(demand: float, price_low: float, price_high: float) -> dict[str, Any]:
     """Synchronous, CPU-intensive function that executes SciPy HiGHS.
     
     This runs outside the asyncio event-loop in a separate thread.
@@ -61,13 +59,13 @@ def _solve_helios_optimization(
         return {"success": False, "error": result.message}
 
     return {
-        "success": True,
+        "success"          : True,
         "execution_time_ms": round(execution_time, 2),
-        "start_time": start_time,
-        "total_cost_eur": round(float(result.fun), 2),
-        "kwh_low_tariff": round(float(result.x[0]), 2),
-        "kwh_high_tariff": round(float(result.x[1]), 2),
-        "kwh_solar": round(float(result.x[2]), 2),
+        "start_time"       : start_time,
+        "total_cost_eur"   : round(float(result.fun ), 2),
+        "kwh_low_tariff"   : round(float(result.x[0]), 2),
+        "kwh_high_tariff"  : round(float(result.x[1]), 2),
+        "kwh_solar"        : round(float(result.x[2]), 2),
     }
 
 
@@ -76,8 +74,8 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
 
     async def handle_optimize(call: ServiceCall) -> ServiceResponse:
         """Service handler that calls the SciPy solver."""
-        demand = call.data["energy_demand_kwh"]
-        price_low = call.data["grid_price_low"]
+        demand     = call.data["energy_demand_kwh"]
+        price_low  = call.data["grid_price_low"]
         price_high = call.data["grid_price_high"]
 
         # The "heavy" CPU task for the SciPy solver is moved to the executor threadpool
@@ -94,9 +92,9 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
         hass.states.async_set(
             f"{DOMAIN}.{OUTPUT_ENTITY}",
             optimization_result["total_cost_eur"],
+        #   unique_id=f"{DOMAIN}_{OUTPUT_ENTITY}",
             attributes={
                 "unit_of_measurement": "€",
-                "unique_id": f"{DOMAIN}_{OUTPUT_ENTITY}",
                 "friendly_name": "Helios Optimale Kosten",
                 "last_calculated": last_calc_dt,
                 "details": optimization_result,
