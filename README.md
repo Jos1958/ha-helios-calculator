@@ -11,24 +11,20 @@ The fully functional calculation model will be delivered in version 1.0.0
 
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Integration-3DDC84?logo=home-assistant&logoColor=#03A9F4)](https://www.home-assistant.io/) 
 
-- **HACS Ready:** Built from the ground up as a native custom component, removing the need for users to configure `pyscript` prerequisites.
-- **Performance:** LP solvers require efficient memory and matrix handling, which runs natively and safely within the HA core async loops.
-- **Clean API:** Exposes calculated schedules directly as Home Assistant entities/sensors, making it effortless to feed the optimal states into Node-RED or automation scripts.
-
 ## Features
-- **Simple** configuration (default values for all parameters, runs without changes a test optimization)
-- Uses **Linear Programming** to determine the optimal energy plan (highest profit and lowest cost)
-- **HACS Ready** native custom component that is built with Python (No need to install PyScript) 
-- Fully integrated with **Home Assistant** (no separate engine, uses **SciPy** modules for the LP/MILP)
-- **Superfast** and **asynchronous** calculation in HA core loop
-- **Open design:** no links with specific (battery or solar) hardware or forecast
-- Designed to be able to work together with the **Home Battery Control (HBC)** project
-- Calculates for a 1-4 day period
-- Start the optimization automatically at the current time (or specify a specific step) for **recalculation** of the plan
-- **Clean** and **Simple** input arrays for full day(s) (00:00-24:00)
-- Support for 60 and 15 minutes steps
-- Future: EV, Heatpump and Boiler devices
-- Future: Provide separate module(s) to link to forecast models, battery devices and solar inverters
+- **LP/MILP Optimization:** Uses SciPy linear programming to maximize profit and minimize energy costs.
+- **Native HA Integration:** Pure Python custom component (HACS-ready), runs without PyScript or external engines.
+- **Asynchronous & Fast:** Lightweight execution built directly into the HA core asynchronous loop.
+- **Zero-Config Setup:** Out-of-the-box defaults let you run a test optimization immediately without configuration.
+- **Independent:** Open design compatible with any dynamic price, solar, battery, or forecast brand/provider.
+- **Flexible Horizon & Intervals:** Calculates energy plan for one or more day(s) with 15-minute or 60-minute time steps.
+- **Dynamic Recalculation:** Runs automatically from the current timestamp or from a user-defined step.
+- **HBC Ready:** Designed for seamless pairing with the Home Battery Control project.
+- **Clean Data Structure:** Simple full-day input and output arrays (00:00–24:00).
+
+## Roadmap
+- **Device Support:** EV, Heat Pump, and Boiler integration (deferrable devices).
+- **Modular Connectors:** Dedicated modules for external forecasts, batteries, and solar inverters.
 
 ## Description
 Helios calculates an optimized energy plan for a specified horizon (typically 1 to 2 days)
