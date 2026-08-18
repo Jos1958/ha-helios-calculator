@@ -6,8 +6,9 @@ The **HELIOS Calculator** Service is a native Home Assistant custom component de
 The Calculator uses **SciPy Linear/MILP Programming** to optimize the Energy Plan 
 for **Dynamic** Prices, **Solar** Production, **Battery** Charging/Discharging and **House** Energy Usage.
 
-**WARNING:** The Current Version is a Proof of Concept for the Helios Calculator
-The fully functional calculation model will be delivered in version 1.0.0
+**WARNING:** The Current Version is a Proof of Concept for the Helios Calculator.
+
+The fully functional calculation model will be delivered in version 1.0.0.
 
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Integration-3DDC84?logo=home-assistant&logoColor=#03A9F4)](https://www.home-assistant.io/) 
 
@@ -19,7 +20,7 @@ The fully functional calculation model will be delivered in version 1.0.0
 - **Independent:** Open design compatible with any dynamic price, solar, battery, or forecast brand/provider.
 - **Flexible Horizon & Intervals:** Calculates energy plan for one or more day(s) with 15-minute or 60-minute time steps.
 - **Dynamic Recalculation:** Runs automatically from the current timestamp or from a user-defined step.
-- **HBC Ready:** Designed for seamless pairing with the Home Battery Control project.
+- **HBC Ready:** Designed for seamless integration with the Home Battery Control (HBC) project.
 - **Clean Data Structure:** Simple full-day input and output arrays (00:00–24:00).
 
 ## Roadmap
@@ -71,11 +72,13 @@ to steer the battery and (TODO) deferrable loads.
 - **Prerequisites:**
   - HACS installation on your Home Assistant System
   - For the Helios Dashboard
-    - Markdown card  
+    - ApexCharts Card
+    - Markdown Card
+    
 - **HACS:** 
   * On the HACS Dashboard: Search for "Helios Calculator"
   * Click the "Helios Calculator" to open the Helios README page with the <Download> button
-  * Press the "Download" button to download the Helios Calculator (in /config/custom_components/helios_calculator)
+  * Press the "Download" button to download the Helios Calculator (to /config/custom_components/helios_calculator)
 
 - **Integration:**
   * Open the Integration Page (**Settings** -> **Devices and Services** - **[Integrations]**)

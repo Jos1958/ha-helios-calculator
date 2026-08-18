@@ -3,10 +3,11 @@ from __future__ import annotations # must be at the top!
 
 import logging
 import time
-from typing import Any
-
-from scipy.optimize import linprog
+import scipy
 import voluptuous as vol
+
+from typing import Any
+from scipy.optimize import linprog
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import (
@@ -60,6 +61,7 @@ def _solve_helios_optimization(demand: float, price_low: float, price_high: floa
 
     return {
         "success"          : True,
+        "scipy"            : f"SciPy: {scipy.__version__}", 
         "execution_time_ms": round(execution_time, 2),
         "start_time"       : start_time,
         "total_cost_eur"   : round(float(result.fun ), 2),

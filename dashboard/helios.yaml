@@ -1,0 +1,456 @@
+views:
+  - type: sections
+    path: jos-helios-controls
+    max_columns: 3
+    title: Helios Controls
+    icon: mdi:shield-sun-outline
+    header:
+      layout: center
+      badges_position: top
+      badges_wrap: wrap
+      card:
+        type: markdown
+        content: |
+          # Helios Calculator for {{ user }} 
+          Home Energy Linear Integrated Optimization Service 
+        visibility:
+          - condition: user
+            users:
+              - aeb5f377cffb469180f9b97c7136f6ae
+    sections:
+      - type: grid
+        cards:
+          - type: picture
+            image:
+              media_content_id: https://www.raaijmakers.be/media/HeliosCalculatorBanner.jpeg
+              media_content_type: ""
+              metadata:
+                navigateIds:
+                  - {}
+                  - media_content_type: ""
+                    media_content_id: __MANUAL_ENTRY__
+            grid_options:
+              columns: full
+        column_span: 3
+      - type: grid
+        cards:
+          - type: tile
+            entity: pyscript.helios_energy_plan
+            name: Result
+            icon: mdi:calculator-variant
+            show_entity_picture: true
+            hide_state: false
+            state_content:
+              - success
+              - total_fun_cost
+              - total_grid_cost
+            vertical: false
+            features_position: bottom
+          - type: tile
+            entity: pyscript.helios_energy_plan
+            name: Calculation
+            icon: mdi:home-battery
+            show_entity_picture: true
+            hide_state: false
+            state_content:
+              - version
+              - calc_result
+            vertical: false
+            features_position: bottom
+          - type: tile
+            grid_options:
+              columns: 12
+              rows: 1
+            entity: pyscript.helios_energy_plan
+            name: Last Optimization Run
+            icon: mdi:shield-sun-outline
+            show_entity_picture: true
+            hide_state: false
+            state_content:
+              - last_run_started
+              - solver_execution_time_ms
+              - solver_iterations
+            vertical: false
+            features_position: bottom
+          - type: tile
+            grid_options:
+              columns: 12
+              rows: 1
+            entity: pyscript.helios_energy_plan
+            name: Optimization Period Start
+            icon: mdi:timer-outline
+            show_entity_picture: true
+            hide_state: false
+            state_content: start_time
+            vertical: false
+            features_position: bottom
+          - type: tile
+            grid_options:
+              columns: 12
+              rows: 1
+            entity: pyscript.helios_energy_plan
+            name: Optimization Period End
+            icon: mdi:timer-outline
+            show_entity_picture: true
+            hide_state: false
+            state_content: end_time
+            vertical: false
+            features_position: bottom
+          - type: tile
+            grid_options:
+              columns: 12
+              rows: auto
+            entity: pyscript.helios_energy_plan
+            name: Optimization Period Active Step
+            icon: mdi:shoe-print
+            color: red
+            show_entity_picture: false
+            hide_state: false
+            state_content:
+              - active_step
+              - active_time
+            vertical: false
+            features_position: bottom
+          - type: tile
+            grid_options:
+              columns: 12
+              rows: auto
+            entity: pyscript.helios_energy_plan
+            name: SoC Start - End
+            icon: mdi:battery-60
+            color: red
+            show_entity_picture: false
+            hide_state: false
+            state_content:
+              - soc_start
+              - soc_end
+            vertical: false
+            features_position: bottom
+          - type: tile
+            grid_options:
+              columns: 24
+              rows: 1
+            entity: pyscript.helios_energy_plan
+            name: Solver Status
+            icon: mdi:message
+            show_entity_picture: true
+            hide_state: false
+            state_content: solver_status
+            vertical: false
+            features_position: bottom
+          - type: custom:button-card
+            entity: pyscript.helios_optimizer_running
+            name: |
+              [[[
+                if (entity && entity.state === 'on')
+                  return 'Helios Energy Optimizer (Running...)';
+                return 'Start Helios Energy Optimizer';
+              ]]]
+            show_icon: false
+            grid_options:
+              rows: auto
+              columns: full
+            tap_action:
+              action: call-service
+              service: pyscript.helios_optimize_automation
+              haptic: heavy
+            styles:
+              card:
+                - background-color: |
+                    [[[
+                      if (entity && entity.state === 'on')
+                        return '#ff9800'; // ORANJE wanneer hij getriggerd wordt
+                      return '#2e7d32';   // GROEN in ruststand
+                    ]]]
+                - color: "#ffffff"
+                - font-weight: bold
+                - transition: background-color 0.2s ease
+        background:
+          color: yellow
+          opacity: 16
+        column_span: 3
+      - type: grid
+        cards:
+          - type: custom:apexcharts-card
+            section_mode: true
+            grid_options:
+              columns: full
+              rows: 8
+            header:
+              show: true
+              title: Optimized Energy Plan (Power & Battery SoC) (Graph)
+              show_states: false
+              colorize_states: true
+            apex_config:
+              chart:
+                width: 100%
+              grid:
+                padding:
+                  left: 10
+                  right: 10
+            graph_span: 48h
+            span:
+              start: day
+            now:
+              show: true
+              label: Nu
+              color: black
+            yaxis:
+              - id: power
+                decimals: 1
+                apex_config:
+                  tickAmount: 5
+                  title:
+                    text: Power (kW)
+              - id: soc
+                opposite: true
+                min: 0
+                max: 100
+                decimals: 0
+                apex_config:
+                  tickAmount: 5
+                  title:
+                    text: Battery SOC (%)
+            series:
+              - entity: pyscript.helios_energy_plan
+                name: Battery (Discharge-Charge)
+                yaxis_id: power
+                show:
+                  legend_value: false
+                color: "#008FFB"
+                type: column
+                stroke_width: 4
+                group_by:
+                  func: raw
+                  duration: 1h
+                data_generator: |
+                  return entity.attributes.plan.timestamp.map((time, index) => {
+                    return [new Date(time).getTime(), entity.attributes.plan.battery_discharge_kw[index] - entity.attributes.plan.battery_charge_kw[index]];
+                  });
+              - entity: pyscript.helios_energy_plan
+                name: Battery SoC
+                yaxis_id: soc
+                show:
+                  legend_value: false
+                color: "#00E396"
+                type: line
+                stroke_width: 4
+                data_generator: |
+                  return entity.attributes.plan.timestamp.map((time, index) => {
+                    return [new Date(time).getTime(), entity.attributes.plan.soc_pct[index]];
+                  });
+              - entity: pyscript.helios_energy_plan
+                name: Grid (Import-Export)
+                yaxis_id: power
+                show:
+                  legend_value: false
+                color: "#008FFB"
+                type: area
+                opacity: 0.3
+                stroke_width: 2
+                data_generator: |
+                  return entity.attributes.plan.timestamp.map((time, index) => {
+                    return [new Date(time).getTime(), (entity.attributes.plan.grid_import_kw[index] - entity.attributes.plan.grid_export_kw[index])];
+                  });
+              - entity: pyscript.helios_energy_plan
+                name: Solar Forecast
+                yaxis_id: power
+                show:
+                  legend_value: false
+                color: "#FEB099"
+                type: area
+                opacity: 0.1
+                stroke_width: 2
+                data_generator: |
+                  return entity.attributes.plan.timestamp.map((time, index) => {
+                    return [new Date(time).getTime(), entity.attributes.plan.sol_for_kw[index]];
+                  });
+              - entity: pyscript.helios_energy_plan
+                name: Solar Production
+                yaxis_id: power
+                show:
+                  legend_value: false
+                color: "#FEB019"
+                type: area
+                opacity: 0.3
+                stroke_width: 2
+                data_generator: |
+                  return entity.attributes.plan.timestamp.map((time, index) => {
+                    return [new Date(time).getTime(), entity.attributes.plan.sol_prod_kw[index]];
+                  });
+              - entity: pyscript.helios_energy_plan
+                name: House Usage
+                yaxis_id: power
+                show:
+                  legend_value: false
+                color: "#FF4560"
+                type: line
+                stroke_width: 3
+                data_generator: |
+                  return entity.attributes.plan.timestamp.map((time, index) => {
+                    return [new Date(time).getTime(), -entity.attributes.plan.house_kw[index]];
+                  });
+              - entity: pyscript.helios_energy_plan
+                name: EV Charging
+                yaxis_id: power
+                show:
+                  legend_value: false
+                color: "#775DD0"
+                type: line
+                stroke_width: 3
+                group_by:
+                  func: raw
+                  duration: 1h
+                data_generator: |
+                  return entity.attributes.plan.timestamp.map((time, index) => {
+                    return [new Date(time).getTime(), entity.attributes.plan.ev_charge_kw[index]];
+                  });
+        column_span: 3
+      - type: grid
+        cards:
+          - type: markdown
+            title: Optimized Energy Plan
+            content: >
+              | Time | Import | Export | FunCost | House (kW) | Sun-For (kW) |
+              Sun-Prod (kW) | Strategy | SoC (%) |SoC (kWh) |  Discharge (kW) |
+              Charge (kW) | Net (kW) | EV Charging (kW) | Heatpump (kW) | Boiler
+              (kW) |
+
+              | :--- |   ---: |   ---: | ---:    |   :---:   |  :---:        | 
+              :---:        | :---:     | :---:   | :---:    | :---:           |
+              :---:      | :---:     | :---:         | :---:           |
+              :---:       |
+
+              {%- set p = state_attr('pyscript.helios_energy_plan', 'plan') -%}
+
+              {%- if p and p.timestamp is defined -%}
+                {%- for i in range(p.timestamp | length) -%}
+                  {%- set t = p.timestamp[i].split(' ')[1][:5] -%}
+                  {%- set imp_pr       = "€ %4.2f"| format(p.import_prices[i]) -%}
+                  {%- set exp_pr       = "€ %4.2f"| format(p.export_prices[i]) -%}
+                  {%- set step_cost    = "€ %4.2f"| format(p.step_costs[i]) -%}
+                  {%- set house_kw     = "%5.2f"  | format(p.house_kw[i]) -%}
+                  {%- set sol_for_kw   = "%5.2f"  | format(p.sol_for_kw[i]) -%}     
+                  {%- set sol_prod_kw  = "%5.2f"  | format(p.sol_prod_kw[i]) -%}     
+                  {%- set soc_pct      = "%3.0f"  | format(p.soc_pct[i]) -%}
+                  {%- set soc_kwh      = "%5.2f"  | format(p.soc_kwh[i]) -%}
+                  {%- set discharge_kw = "%5.2f"  | format(p.battery_discharge_kw[i] if p.battery_discharge_kw != [] else 0) -%}
+                  {%- set charge_kw    = "%5.2f"  | format(p.battery_charge_kw[i] if p.battery_charge_kw != [] else 0) -%}
+                  {%- set grid_kw      = "%5.2f"  | format(p.grid_import_kw[i] - p.grid_export_kw[i]) -%}
+                  {%- set ev_kw        = "%5.2f"  | format(p.ev_charge_kw[i] if p.ev_charge_kw != [] else 0) -%}
+                  {%- set hp_kw        = "%5.2f"  | format(p.heat_pump_kw[i] if p.heat_pump_kw != [] else 0) -%}
+                  {%- set boiler_kw    = "%5.2f"  | format(p.boiler_kw[i] if p.boiler_kw != [] else 0) -%}
+                  
+                  {%- set row = "\n|" ~ t  ~ "|" -%}
+                  {%- set row = row ~ imp_pr ~ "|" ~ exp_pr ~ "|" -%} 
+                  {%- set row = row ~ step_cost ~ "|" -%} 
+                  {%- set row = row ~ house_kw ~ "|" -%} 
+                  {%- set row = row ~ sol_for_kw ~ "|" -%}
+                  {%- set row = row ~ sol_prod_kw ~ "|" -%}
+                  {%- set row = row ~ p.strategy[i] ~ "|" -%}
+                  {%- set row = row ~ soc_pct  ~ "|" ~  soc_kwh ~ "|" -%}
+                  {%  set row = row ~ discharge_kw ~ "|" ~ charge_kw ~ "|"  ~ grid_kw ~ "|"  -%}
+                  {%- set row = row ~ ev_kw ~ "|" ~ hp_kw ~ "|" ~ boiler_kw ~ "|" -%}
+                  {{- row -}}  
+                {%- endfor -%}
+              {%- else -%}
+                {{ "\n\n*Geen plandata beschikbaar.*" }}
+              {%- endif -%}
+            grid_options:
+              columns: full
+        column_span: 3
+      - type: grid
+        cards:
+          - type: heading
+            heading: "Helios Calculator: Energy Plan Optimalization"
+            heading_style: title
+            icon: mdi:medication
+          - type: heading
+            icon: mdi:information
+            heading: Optimization Parameters and Results
+            heading_style: subtitle
+            tap_action:
+              action: url
+              url_path: >-
+                https://docs.homebatterycontrol.com/xx-optimized-strategy.html#battery-life
+          - type: entities
+            entities:
+              - entity: input_number.helios_calc_start_step
+              - entity: input_number.house_battery_control_hysteresis_in_w
+                name: "Todo "
+                secondary_info: none
+          - type: markdown
+            title: Optimalization State
+            grid_options:
+              rows: auto
+            content: >
+              {%- set a = states.pyscript.helios_energy_plan.attributes |
+              default(none) -%}
+
+              {%- if a is defined and a is not none -%}
+                | Optimization          | Values                 |
+                | :---                  | :---                   |
+                | **Success**           | {{ a.get('success') }} | 
+                | **Version**           | {{ a.get('version') }} |
+                | **Fun Cost**          | € {{ a.get('total_fun_cost'  ) }} |
+                | **Total Step Cost**   | € {{ a.get('total_step_cost' ) }} |
+                | **Run Started**       | {{ a.get('last_run_started'  ) }} | 
+                | **Run Stopped**       | {{ a.get('last_run_stopped'  ) }} |
+                | **Solver Time** (ms)  | {{ a.get('solver_execution_time_ms') }} |
+                | **Solver Iterations** | {{ a.get('solver_iterations')        }} |
+                | **Period Start**      | {{ a.get('start_time'        ) }} |
+                | **Period Active**     | {{ a.get('active_time'       ) }} |
+                | **Period End**        | {{ a.get('end_time'          ) }} |
+                | **Start Step**        | {{ a.get('start_step'        ) }} |
+                | **Battery Mode**      | {{ a.get('battery_mode'      ) }} |
+                | **SoC Start** (kWh)   | {{ a.get('soc_start'         ) }} |
+                | **SoC End** (kWh)     | {{ a.get('soc_end'           ) }} |
+                | **Solar Mode**        | {{ a.get('solar_mode'        ) }} |
+                | **Validation**        | {{ a.get('validation'        ) }} |
+              {%- else -%}
+
+              *No Optimized Energy Plan available.*
+
+              {%- endif -%}
+                
+          - type: markdown
+            title: Actuals for active step
+            content: >
+              {%- set c = state_attr('pyscript.helios_energy_plan', 'current')
+              -%}
+
+              {%- if c is defined and c is not none -%}
+                {%- set step  = state_attr('pyscript.helios_energy_plan', 'active_step') | default(None) -%}
+                {%- set start = state_attr('pyscript.helios_energy_plan', 'active_time') | default('')  -%}
+              🐾 **Active Step:** {{ step }}
+
+              🕰️ **Step Start Time:** {{ start }}
+                | Component | State | Power |
+                | :--- | :---: | :---: |
+                | 🧠 **Battery Strategy**  | **{{ c.strategy }}**                                              | {{ c.grid_power_w      }} W |
+                | 📊 **Net Battery Power** | {{ '🔻 Discharge' if c.net_battery_power_w < 0 else ('🔺 Charge' if c.net_battery_power_w > 0 else '⚪ Standby') }} | {{ c.net_battery_power_w }} W |
+                | 🔋 **Battery Power**     |                                                                   | {{ c.battery_power_w   }} W |
+                | ⚡ **Charge Power**      | {{ '🟢 Active'   if c.charge_power_w    > 0 else '⚪ Standby' }} | {{ c.charge_power_w    }} W |
+                | 🔻 **Discharge Power**   | {{ '🔴 Active'   if c.discharge_power_w > 0 else '⚪ Standby' }} | {{ c.discharge_power_w }} W |
+                | 🚗 **EV Laadpaal**       | {{ '⚡ Charge'   if c.ev_power_w        > 0 else '⚪ Off'     }} | {{ c.ev_power_w        }} W |
+                | ♨️ **Heatpump**          | {{ '🔥 Heat'     if c.hp_power_w        > 0 else '⚪ Off'     }} | {{ c.hp_power_w        }} W |
+                | 🚿 **Boiler**            | {{ '💧 Heat Up'  if c.boiler_power_w    > 0 else '⚪ Off'     }} | {{ c.boiler_power_w    }} W |
+              {%- else -%}
+
+              *No Current Strategy and Power available.*
+
+              {%- endif -%}
+          - type: markdown
+            content: Als deze tekst **ROOD** is, werkt card-mod!
+            card_mod:
+              style: |
+                ha-card {
+                  color: red !important;
+                }
+            grid_options:
+              columns: full
+            visibility:
+              - condition: user
+                users:
+                  - aeb5f377cffb469180f9b97c7136f6ae
+        column_span: 3
