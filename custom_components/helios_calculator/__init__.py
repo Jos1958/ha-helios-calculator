@@ -5,6 +5,7 @@ import logging
 import time
 import scipy
 import voluptuous as vol
+import homeassistant.helpers.config_validation as cv # For Config Schema
 
 from typing import Any
 from scipy.optimize import linprog
@@ -70,6 +71,10 @@ def _solve_helios_optimization(demand: float, price_low: float, price_high: floa
         "kwh_solar"        : round(float(result.x[2]), 2),
     }
 
+
+# We are NOT using the old YAML-configuratie via configuration.yaml for helios. 
+# This solves a warning in hacs.yaml/hassfest.yaml workflow validations
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Set-up of the Helios Calculator component (Proof of Concept only)."""
