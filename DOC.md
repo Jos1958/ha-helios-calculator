@@ -5,7 +5,7 @@
 See [Why use Linear Programming?](WHY.md#why-use-lp-en) or [Waarom Lineair Programmeren gebruiken?](WHY.md#waarom-lp-gebruiken-nl)
 
 ## Description
-The Helios Calculator demonstrates how a LP model can called from a Custom Component in Home Assistant for a very simple Optimization Model.
+The Helios Calculator demonstrates how a LP model can be called from a Custom Component in Home Assistant for a very simple Optimization Model.
 
 ### Input
 It exposes a service that calculates an optimum for a very simple model with 3 input parameters:
@@ -27,7 +27,7 @@ The **Energy** must be balanced: D = x0 + x1 + x2
 
 ### Output
 The results of the Service will be the values of the variables x0, x1 and x3 and the total cost for these values.
-These results will be return to the caller (in the return) and will be assigned to the entity 'helios_calculator.optimal_cost'.
+These results will be returned to the caller (See the anwer) and will be assigned to the HA Entity 'helios_calculator.optimal_cost'.
 <br>For Example:
 <br>**Status:** 16.98
 <br>**Status-attributes:**
