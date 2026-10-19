@@ -3,10 +3,9 @@
 
 ## Intro
 The **HELIOS Calculator** Service is a native Home Assistant custom component designed to calculate mathematically an optimal energy plan.
-The Calculator uses **SciPy Linear/MILP Programming** to optimize the Energy Plan 
-for **Dynamic** Prices, **Solar** Production, **Battery** Charging/Discharging and **House** Energy Usage.
+The Calculator uses **SciPy Linear/MILP Programming** to optimize the Energy Plan. 
 
-**WARNING:** The Current Version is a Proof of Concept for the Helios Calculator.
+**WARNING:** The Current Version is a **Proof of Concept** for the Helios Calculator and does NOT yet deliver a real-life implementation.
 
 The fully functional calculation model will be delivered in version 1.0.0.
 
@@ -14,18 +13,21 @@ The fully functional calculation model will be delivered in version 1.0.0.
 
 ## Features
 - **LP/MILP Optimization:** Uses SciPy linear programming to maximize profit and minimize energy costs.
+- **WARNING: This is the Proof of Concept to demonstrate that LINPROG in Home Assistant (actual functions will be delivered later)
+
+## Future Functions
+- **Dynamic** Prices, **Solar** Production, **Battery** Charging/Discharging and **House** Energy Usage.
 - **Native HA Integration:** Pure Python custom component (HACS-ready), runs without PyScript or external engines.
 - **Asynchronous & Fast:** Lightweight execution built directly into the HA core asynchronous loop.
 - **Zero-Config Setup:** Out-of-the-box defaults let you run a test optimization immediately without configuration.
 - **Independent:** Open design compatible with any dynamic price, solar, battery, or forecast brand/provider.
 - **Flexible Horizon & Intervals:** Calculates energy plan for one or more day(s) with 15-minute or 60-minute time steps.
 - **Dynamic Recalculation:** Runs automatically from the current timestamp or from a user-defined step.
-- **HBC Ready:** Designed for seamless integration with the Home Battery Control (HBC) project.
-- **Clean Data Structure:** Simple full-day input and output arrays (00:00–24:00).
-
-## Roadmap
+- **HBC Ready:** Designed for seamless integration with the HBC Marstek Battery Interface
+- **Clean Data Structure:** Simple full-day input and output arrays (00:00-24:00).
 - **Device Support:** EV, Heat Pump, and Boiler integration (deferrable devices).
-- **Modular Connectors:** Dedicated modules for external forecasts, batteries, and solar inverters.
+- **Modular Connectors:** Dedicated modules for energy providers, solar forecasts, battery integrations and solar inverter integrations.
+- **HBC Integration:** Integrate as an additional Strategy with the Home Battery Control (HBC) project.
 
 ## Description
 Helios calculates an optimized energy plan for a specified horizon (typically 1 to 2 days)
@@ -63,22 +65,15 @@ to steer the battery and (TODO) deferrable loads.
 - Solar production forecast array
 - Battery parameters
  
-## Optional deferrable loads (Future):
-- Electric Vehicle (EV) charging profile
-- Heat Pump (HP) operation parameters
-- Boiler operation parameters
-
 ## Installation
 - **Prerequisites:**
   - HACS installation on your Home Assistant System
-  - For the Helios Dashboard
-    - ApexCharts Card
-    - Markdown Card
     
 - **HACS:** 
-  * On the HACS Dashboard: Search for "Helios Calculator"
-  * Click the "Helios Calculator" to open the Helios README page with the <Download> button
-  * Press the "Download" button to download the Helios Calculator (to /config/custom_components/helios_calculator)
+  * On the HACS Dashboard: **Search** for "Helios Calculator"
+  * Click the **"Helios Calculator"** to open the Helios README page with the <Download> button
+  * Press the **"Download"** button to download the Helios Calculator (to /config/custom_components/helios_calculator)
+  * **Herstart** Home Assistant
 
 - **Integration:**
   * Open the Integration Page (**Settings** -> **Devices and Services** - **[Integrations]**)
@@ -91,24 +86,12 @@ to steer the battery and (TODO) deferrable loads.
   * Press **Complete** to close the popup
   * **Note:** All further configuration is done in the call to Helios Calculator Service  
 
-- **Automation:**
-  * todo
-
-- **Dashboard:**
-  * todo   
-
 ## What's New:
-?? **[Release Notes](RELEASE_NOTES.md)**
--- **Proof of Concept**:
+- **Proof of Concept**: for LINPROG in a HA Custom Component
+**[Release Notes](RELEASE_NOTES.md)**
 
 ## Documentation
-?? **[Helios Calculator Documentation](DOC.md)**
-
-## Advanced
-
-## Updating
-
-## Credits
+**[Helios Calculator Documentation](DOC.md)**
 
 ## Contributing
 At the moment it is not advised to develop additional features based on the current version.
@@ -117,7 +100,6 @@ Only small bug fixes will be accepted.
 Please raise an issue to report a bug or to request for new functionality.
 
 # License
-
-# Help
+**[Helios Optimizer License](https://github.com/Jos1958/ha-helios-optimizer/blob/main/LICENSE)**
 
 **Keywords:** Solar Panels, Battery, Home Automation, Home Assistant, Optimize your Energy Plan

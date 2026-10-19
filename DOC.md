@@ -1,1 +1,34 @@
-"ha-helios-calculator Documentation" 
+# Helios Calculator - Documentation
+![Helios Calculator](images/HeliosCalculatorBanner.jpeg)
+
+## Why use a Linear Programming Model
+See [Why use Linear Programming?](WHY.md#why-use-lp-en) or [Waarom Lineair Programmeren gebruiken?](WHY.md#waarom-lp-gebruiken-nl)
+
+## Description
+The Helios Calculator demonstrates how a LP model can be used in Home Assistant with a simple Optimization Model.
+
+It calculates a very simple model with 3 input parameters:
+-**D  = Energy Demand (kWh):** How much energy do we need in total
+-**LT = Low Tarif (€/kWh):** What is the low tarif for electricity (Default: 0.15 €/kWh)
+-**HT = High Tarif (€/kWh):** What is the high tarif for electricity (Default: 0.35 €/kWh)
+
+We have 3 variables that need to be optimized by the model:
+-**x0 is Low Tarif Energy  (kWh):** How much Energy do we use from the Grid at the low tarif (Maximum is 10kWh)
+-**x1 is High Tarif Energy (kWh):** How much Energy do we use from the Grid at the high tarif (No Limit)
+-**x2 is Sun Energy (kWh):** How much Energy do we use from the Grid at the high tarif 
+ <br>(Maximum is 8 kWh but with a small fixed charge of ST = 0.05 €/kWh)
+
+<br>
+<br>The Energy must be balanced: D = x0 + x1 + x2
+<br>The total costs are LT * x0 + HT * x1 + ST * x2
+<br>We want to calculate the best values for x0, x1 and x2 at the lowest cost.
+The output will be the values x0, x1 and x3 and the total cost for these values.
+
+<br><br>
+This is a very simple model that can easily be calculated by hand but it is just meant to test the LP function with a Custom Component in Home Assistant.
+
+## How to Use
+From the Home Assistant Menu - Settings - Tools - Actions
+<br>Search for "Calculate Optimized Schedule" or "helios.calculator.optimize_schedule"
+Specify at least the Energy Demand and press "Perform Action".
+![Helios Calculator Service](images/HeliosCalculatorService.jpeg)

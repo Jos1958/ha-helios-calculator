@@ -39,7 +39,7 @@ def _solve_helios_optimization(demand: float, price_low: float, price_high: floa
     start_time = dt_util.now().isoformat()
     _LOGGER.debug("SciPy HiGHS optimalization has started using a background-thread")
 
-    # Example: Minimeze the energy costs c * x
+    # Example: Minimize the energy costs c * x
     # x0 = kWh for cheap power from grid, x1 = kWh is expensive power from grid, x2 = kWh from solar panels
     c = [price_low, price_high, 0.05]  # Cost per kWh per source
 
