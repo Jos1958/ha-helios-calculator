@@ -1,9 +1,9 @@
-# Home Assistant Helios Calculator (ha-helios-calculator)
+# Home Assistant Helios Calculator
 ![Helios Calculator](images/HeliosCalculatorBanner.jpeg)
 
 ## Intro
-The **HELIOS Calculator** Service is a native Home Assistant custom component designed to calculate mathematically an optimal energy plan.
-The Calculator uses **SciPy Linear/MILP Programming** to optimize the Energy Plan. 
+The **HELIOS Calculator** is a native Home Assistant Service designed to demonstrate how
+Python **SciPy Linear/MILP Programming** can be used from a Home Assistant Custom Component.
 
 **WARNING:** The Current Version is a **Proof of Concept** for the Helios Calculator and does NOT yet deliver a real-life implementation yet.
 
@@ -12,7 +12,7 @@ The fully functional calculation model will be delivered in version 1.0.0.
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Integration-3DDC84?logo=home-assistant&logoColor=#03A9F4)](https://www.home-assistant.io/) 
 
 ## Features
-- **LP/MILP Optimization:** Uses SciPy linear programming to minimize energy costs for simple model.
+- **LP/MILP Optimization:** Uses SciPy linear programming to minimize energy costs for a simple model.
 - **WARNING: This is the Proof of Concept to demonstrate that LINPROG in Home Assistant (actual functions will be delivered later)
 
 ## Description
