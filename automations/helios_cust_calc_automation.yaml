@@ -5,8 +5,9 @@ conditions: []
 actions:
   - action: helios_calculator.optimize_schedule
     data:
-      energy_demand_kwh: 35.5
+      energy_demand_kwh: 10.0
       grid_price_low: 0.15
+      grid_price_high: 0.35
     response_variable: optimalization_result
   - action: persistent_notification.create
     data:

@@ -26,7 +26,25 @@ The **Energy** must be balanced: D = x0 + x1 + x2
 <br>We want to calculate the values for x0, x1 and x2 where the total cost are at the minimum.
 
 ### Output
-The output of the Service will be the values of the variables x0, x1 and x3 and the total cost for these values.
+The results of the Service will be the values of the variables x0, x1 and x3 and the total cost for these values.
+These results will be return to the caller (in the return) and will be assigned to the entity 'helios_calculator.optimal_cost'.
+<br>For Example:
+<br>**Status:** 16.98
+<br>**Status-attributes:**
+'''yaml
+unit_of_measurement: €
+friendly_name: Helios Optimale Kosten
+last_calculated: '2026-10-19T15:53:15.429569+02:00'
+details:
+  success: true
+  scipy: 'SciPy: 1.18.1'
+  execution_time_ms: 6.33
+  start_time: '2026-10-19T15:53:15.422872+02:00'
+  total_cost_eur: 16.98
+  kwh_low_tariff: 10
+  kwh_high_tariff: 43.1
+  kwh_solar: 8 
+'''
 
 ### Remark
 The results of this model can of course be easily calculated by hand.
@@ -38,7 +56,7 @@ From the Home Assistant Menu - Settings - Tools - Actions
 <br>Search for **"Calculate Optimized Schedule"** or **"helios.calculator.optimize_schedule"**.
 <br>Specify at least the Energy Demand and press "Perform Action".
 <br>The response from the service will be displayed in the "Answer" section.
-
 ![Helios Calculator Service](images/HeliosCalculatorService.jpeg)
 
+An alternative is to create an automation (see automation\helios_cust_calc_automation.yaml for an example with a service call and a notification of the result).
 [README](README.md) - [Doc](DOC.md) - [Why LP](WHY.md) - [Release Notes](RELEASE_NOTES.md) - [License](LICENSE "GitHub Docs")
