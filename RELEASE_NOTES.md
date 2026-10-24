@@ -1,5 +1,9 @@
 # Release Notes
 
+## 0.8.4 (2026-10-24) Updates after Review
+- Added a Sensor to the Custom Component with the resulting optimal cost state and attributes
+- Documentation updates/alignment
+
 ## 0.8.x (2026-08-15) Custom Component and HACS support (Proof of Concept)
 - Proof of concept for a version that runs as a Home Assistant Custom Component (simple model but using LP) (__init__.py)
 - Brand files in sub folder of the custom component (with icon.png and logo.png)

@@ -1,4 +1,4 @@
-# Helios Calculator - Documentation
+# Home Assistant Helios Calculator - Documentation
 ![Helios Calculator](images/HeliosCalculatorBanner.jpeg)
 
 ## Why use a Linear Programming Model

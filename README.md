@@ -1,4 +1,4 @@
-# Home Assistant Helios Calculator
+# Home Assistant Helios Calculator - README
 ![Helios Calculator](images/HeliosCalculatorBanner.jpeg)
 
 ## Intro
