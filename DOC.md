@@ -32,7 +32,7 @@ These results will be returned to the caller (See the anwer) and will be assigne
 <br>**State:** 3.05
 <br>**State-attributes:**
 
-'''yaml
+```yaml
 unit_of_measurement: €
 friendly_name: Helios Calculator Optimal Cost
 last_calculated: '2026-10-19T15:53:15.429569+02:00'
@@ -49,7 +49,7 @@ attributes:
     energy_low: 10
     energy_high: 5
     energy_solar: 8 
-'''
+```
 
 ### Remark
 The results of this model can of course be easily calculated by hand.
@@ -58,7 +58,7 @@ The results of this model can of course be easily calculated by hand.
 
 ## How to Use
 From the Home Assistant Menu - Settings - Tools - Actions
-<br>Search for **"Helios Calculator Optimized Energy Cost"** or **"helios.calculator.optimize_energy_cost"**.
+<br>Search for **"Helios Calculator Optimized Energy Cost"** or **"helios_calculator.optimize_energy_cost"**.
 <br>Specify at least the Energy Demand and press "Perform Action".
 <br>The response from the service will be displayed in the "Answer" section.
 ![Helios Calculator Service](images/HeliosCalculatorService.jpeg)
