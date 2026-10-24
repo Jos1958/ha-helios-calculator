@@ -27,23 +27,27 @@ The **Energy** must be balanced: D = x0 + x1 + x2
 
 ### Output
 The results of the Service will be the values of the variables x0, x1 and x3 and the total cost for these values.
-These results will be returned to the caller (See the anwer) and will be assigned to the HA Entity 'helios_calculator.optimal_cost'.
+These results will be returned to the caller (See the anwer) and will be assigned to the HA Entity 'sensor.helios_calculator_optimal_cost'.
 <br>For Example:
-<br>**Status:** 16.98
-<br>**Status-attributes:**
+<br>**State:** 3.05
+<br>**State-attributes:**
 '''yaml
 unit_of_measurement: €
-friendly_name: Helios Optimale Kosten
+friendly_name: Helios Calculator Optimal Cost
 last_calculated: '2026-10-19T15:53:15.429569+02:00'
-details:
+attributes:
   success: true
   scipy: 'SciPy: 1.18.1'
   execution_time_ms: 6.33
   start_time: '2026-10-19T15:53:15.422872+02:00'
-  total_cost_eur: 16.98
-  kwh_low_tariff: 10
-  kwh_high_tariff: 43.1
-  kwh_solar: 8 
+  input_parameters:
+    demand: 23.0
+    price_low: 0.08
+    price_high: 0.37
+  variables:
+    energy_low: 10
+    energy_high: 5
+    energy_solar: 8 
 '''
 
 ### Remark
@@ -53,7 +57,7 @@ The results of this model can of course be easily calculated by hand.
 
 ## How to Use
 From the Home Assistant Menu - Settings - Tools - Actions
-<br>Search for **"Calculate Optimized Schedule"** or **"helios.calculator.optimize_schedule"**.
+<br>Search for **"Helios Calculator Optimized Energy Cost"** or **"helios.calculator.optimize_energy_cost"**.
 <br>Specify at least the Energy Demand and press "Perform Action".
 <br>The response from the service will be displayed in the "Answer" section.
 ![Helios Calculator Service](images/HeliosCalculatorService.jpeg)

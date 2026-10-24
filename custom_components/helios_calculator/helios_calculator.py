@@ -1,14 +1,15 @@
+import time
 import logging
+import scipy
 
 from typing import Any
 from scipy.optimize import linprog
 
 _LOGGER = logging.getLogger(__name__)
 
-def _solve_helios_optimization(demand: float, price_low: float, price_high: float) -> dict[str, Any]:
+def solve_optimize_energy_cost(start_time: string, demand: float, price_low: float, price_high: float) -> dict[str, Any]:
     """Synchronous, CPU-intensive function that executes SciPy HiGHS."""
     t_start = time.perf_counter()
-    start_time = dt_util.now().isoformat()
     
     c = [price_low, price_high, 0.05]
     A_ub = [[-1.0, -1.0, -1.0]]
@@ -27,8 +28,15 @@ def _solve_helios_optimization(demand: float, price_low: float, price_high: floa
         "scipy": f"SciPy: {scipy.__version__}", 
         "execution_time_ms": round(execution_time, 2),
         "start_time": start_time,
+        "input_parameters": {
+            "demand": round(demand, 1),
+            "price_low": round(price_low, 2),
+            "price_high": round(price_high, 2),
+        },
+        "variables": {        
+            "energy_low": round(float(result.x[0]), 1),
+            "energy_high": round(float(result.x[1]), 1),
+            "energy_solar": round(float(result.x[2]), 1),
+        },
         "total_cost_eur": round(float(result.fun), 2),
-        "kwh_low_tariff": round(float(result.x[0]), 2),
-        "kwh_high_tariff": round(float(result.x[1]), 2),
-        "kwh_solar": round(float(result.x[2]), 2),
     }

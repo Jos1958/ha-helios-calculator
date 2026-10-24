@@ -1,6 +1,6 @@
-optimize_schedule:
-  name: Calculate Optimized Schedule
-  description: Performs a SciPy HiGHS optimalization for energy usage.
+optimize_energy_cost:
+  name: Helios Calculator Optimize Energy Cost
+  description: Performs a simple SciPy HiGHS optimalization for Costs of Energy Usage (Proof of Concept for LP with HA Custom Component).
   fields:
     energy_demand_kwh:
       name: Energy Demand (kWh)

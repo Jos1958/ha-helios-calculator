@@ -14,7 +14,7 @@ Python **SciPy Linear/MILP Programming** can be used from a Home Assistant Custo
 - **WARNING:** This is a Proof of Concept to demonstrate that LINPROG in Home Assistant (actual functions will be delivered later)!
 
 ## Description
-Provide a service that calculates the lowest cost for a very simple model with 3 input parameters (Energy demand, low tarif and high tarif)
+Provide a service that calculates the lowest cost for a very simple model with 3 input parameters (Energy Demand, Low Tarif and High Tarif)
 and 3 variables (Low and High Tarif Energy and Solar Production).
 <br>See the **[Helios Calculator Documentation](DOC.md)** for details.
 
@@ -46,6 +46,6 @@ and 3 variables (Low and High Tarif Energy and Solar Production).
 # License
 **[Helios Calculator License](https://github.com/Jos1958/ha-helios-calculator/blob/main/LICENSE)**
 
-**Keywords:** Solar Panels, Battery, Home Automation, Home Assistant, Optimize your Energy Plan
+**Keywords:** Home Automation, Home Assistant, Linear Programming, Optimal Cost, Solar, Energy
 
 [README](README.md) - [Doc](DOC.md) - [Why LP](WHY.md) - [Release Notes](RELEASE_NOTES.md) - [License](LICENSE "GitHub Docs")
