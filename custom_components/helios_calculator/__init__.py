@@ -1,14 +1,14 @@
 """Helios Calculator custom component."""
-from __future__ import annotations # must be at the top!
+from __future__ import annotations
 
 import logging
 import time
 import scipy
 import voluptuous as vol
-import homeassistant.helpers.config_validation as cv # For Config Schema
+import homeassistant.helpers.config_validation as config_validation
 
 from typing import Any
-from scipy.optimize import linprog
+from helios_calculator import _solve_helios_optimization # Import the actual optimizer function
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import (
@@ -17,75 +17,54 @@ from homeassistant.core import (
     ServiceResponse,
     SupportsResponse,
 )
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
 
 DOMAIN = "helios_calculator"
-OUTPUT_ENTITY = "optimal_cost"
 _LOGGER = logging.getLogger(__name__)
 
-# Validation schema for the service input
 OPTIMIZE_SCHEMA = vol.Schema({
     vol.Required("energy_demand_kwh"): vol.Coerce(float),
-    vol.Optional("grid_price_low" , default=0.15): vol.Coerce(float),
+    vol.Optional("grid_price_low", default=0.15): vol.Coerce(float),
     vol.Optional("grid_price_high", default=0.35): vol.Coerce(float),
 })
 
-def _solve_helios_optimization(demand: float, price_low: float, price_high: float) -> dict[str, Any]:
-    """Synchronous, CPU-intensive function that executes SciPy HiGHS.
-    
-    This runs outside the asyncio event-loop in a separate thread.
-    """
-    t_start = time.perf_counter() # Start of LP run
-    start_time = dt_util.now().isoformat()
-    _LOGGER.debug("SciPy HiGHS optimalization has started using a background-thread")
 
-    # Example: Minimize the energy costs c * x
-    # x0 = kWh for cheap power from grid, x1 = kWh is expensive power from grid, x2 = kWh from solar panels
-    c = [price_low, price_high, 0.05]  # Cost per kWh per source
+class HeliosDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
+    """Class to manage fetching of Helios Calculator Data."""
 
-    # Limitation: x0 + x1 + x2 >= demand (or -x0 - x1 - x2 <= -demand)
-    A_ub = [[-1.0, -1.0, -1.0]]
-    b_ub = [-demand]
+    def __init__(self, hass: HomeAssistant) -> None:
+        """Initialize coordinator."""
+        super().__init__(
+            hass,
+            _LOGGER,
+            name=DOMAIN,
+        )
+        self.last_optimization_result: dict[str, Any] = {}
 
-    # Bounds: Minimum 0 kWh, maximum 10 kWh for cheap electricity tariff and 8 kWh solar
-    bounds = [(0, 10), (0, None), (0, 8)]
-
-    # Perform the HiGHS-solver using Lineair Programming (LP) of SciPy
-    result = linprog(c, A_ub=A_ub, b_ub=b_ub, bounds=bounds, method="highs")
-
-    t_end = time.perf_counter() # End of LP run
-    execution_time = (t_end - t_start) * 1000 # calculate execution time in milliseconds
-
-    if not result.success:
-        _LOGGER.error("HiGHS solver failed: %s", result.message)
-        return {"success": False, "error": result.message}
-
-    return {
-        "success"          : True,
-        "scipy"            : f"SciPy: {scipy.__version__}", 
-        "execution_time_ms": round(execution_time, 2),
-        "start_time"       : start_time,
-        "total_cost_eur"   : round(float(result.fun ), 2),
-        "kwh_low_tariff"   : round(float(result.x[0]), 2),
-        "kwh_high_tariff"  : round(float(result.x[1]), 2),
-        "kwh_solar"        : round(float(result.x[2]), 2),
-    }
-
+    async def _async_update_data(self) -> dict[str, Any]:
+        """Fetch data from coordinator cache."""
+        return self.last_optimization_result
 
 # We are NOT using the old YAML-configuratie via configuration.yaml for helios. 
 # This solves a warning in hacs.yaml/hassfest.yaml workflow validations
-CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+CONFIG_SCHEMA = config_validation.config_entry_only_config_schema(DOMAIN)
 
-async def async_setup(hass: HomeAssistant, config: dict) -> bool:
-    """Set-up of the Helios Calculator component (Proof of Concept only)."""
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Set up Helios Calculator from a config entry."""
+    coordinator = HeliosDataUpdateCoordinator(hass)
+    
+    # Sla de coordinator op in hass.data zodat sensor.py erbij kan
+    hass.data.setdefault(DOMAIN, {})
+    hass.data[DOMAIN][entry.entry_id] = coordinator
 
     async def handle_optimize(call: ServiceCall) -> ServiceResponse:
-        """Service handler that calls the SciPy solver."""
-        demand     = call.data["energy_demand_kwh"]
-        price_low  = call.data["grid_price_low"]
+        """Service handler that calls the SciPy solver and updates coordinator data."""
+        demand = call.data["energy_demand_kwh"]
+        price_low = call.data["grid_price_low"]
         price_high = call.data["grid_price_high"]
 
-        # The "heavy" CPU task for the SciPy solver is moved to the executor threadpool
+        # Call the Optimizer and (asynch) wait for the result
         optimization_result = await hass.async_add_executor_job(
             _solve_helios_optimization, demand, price_low, price_high
         )
@@ -93,24 +72,12 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
         if not optimization_result.get("success"):
             return {"status": "failed", "details": optimization_result}
 
-        last_calc_dt = dt_util.now().isoformat() # Get the current timestamp
-        
-        # Update the state and attributes in Home Assistant (cost plus details)
-        hass.states.async_set(
-            f"{DOMAIN}.{OUTPUT_ENTITY}",
-            optimization_result["total_cost_eur"],
-        #   unique_id=f"{DOMAIN}_{OUTPUT_ENTITY}",
-            attributes={
-                "unit_of_measurement": "€",
-                "friendly_name": "Helios Optimale Kosten",
-                "last_calculated": last_calc_dt,
-                "details": optimization_result,
-            },
-        )
+        # Save the optimizer result in the coordinator and refresh the coordinator (which triggers the sensor):
+        coordinator.last_optimization_result = optimization_result
+        await coordinator.async_refresh()
 
         return optimization_result
 
-    # Register the service
     hass.services.async_register(
         DOMAIN,
         "optimize_schedule",
@@ -119,19 +86,15 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
         supports_response=SupportsResponse.ONLY,
     )
 
-    return True
-    
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up Helios Calculator from a config entry."""
-    hass.data.setdefault(DOMAIN, {})
+    # Laad de sensor-platform setup in
+    await hass.config_entries.forward_entry_setups(entry, ["sensor"])
 
-    # Register services, setup platforms, or load initial logic here
     _LOGGER.info("Helios Calculator successfully loaded via Config Entry")
-
     return True
-
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a Helios Calculator config entry."""
-    _LOGGER.info("Helios Calculator unloaded")
-    return True    
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, ["sensor"])
+    if unload_ok:
+        hass.data[DOMAIN].pop(entry.entry_id)
+    return unload_ok

@@ -1,0 +1,14 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Setup Helios Calculator",
+        "description": "Welcome to **Helios Calculator**!\n\nThis integration uses SciPy linear programming to calculate optimal energy usage. Configuration can be done in the call to the Helios Service.\nClick **Submit** to enable the integration."
+      }
+    },
+    "abort": {
+      "already_configured": "Helios Calculator is already configured.",
+      "already_in_progress": "Configuration of Helios Calculator is already in progress. Restart HA if the situation does not change."
+    }
+  }
+}
