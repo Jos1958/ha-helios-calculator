@@ -31,6 +31,7 @@ These results will be returned to the caller (See the anwer) and will be assigne
 <br>For Example:
 <br>**State:** 3.05
 <br>**State-attributes:**
+
 '''yaml
 unit_of_measurement: €
 friendly_name: Helios Calculator Optimal Cost
@@ -63,4 +64,5 @@ From the Home Assistant Menu - Settings - Tools - Actions
 ![Helios Calculator Service](images/HeliosCalculatorService.jpeg)
 
 An alternative is to create an automation (see automation\helios_cust_calc_automation.yaml for an example with a service call and a notification of the result).
+
 [README](README.md) - [Doc](DOC.md) - [Why LP](WHY.md) - [Release Notes](RELEASE_NOTES.md) - [License](LICENSE "GitHub Docs")
