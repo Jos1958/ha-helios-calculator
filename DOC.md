@@ -27,7 +27,8 @@ The **Energy** must be balanced: D = x0 + x1 + x2
 
 ### Output
 The results of the Service will be the values of the variables x0, x1 and x3 and the total cost for these values.
-These results will be returned to the caller (See the anwer) and will be assigned to the HA Entity 'sensor.helios_calculator_optimal_cost'.
+These results will be returned to the caller (See the answer) and will be assigned 
+to the HA Entity <b>'sensor.helios_calculator_optimal_cost'</b>.
 <br>For Example:
 <br>**State:** 3.05
 <br>**State-attributes:**
